@@ -75,22 +75,16 @@ const routes: RouteRecordRaw[] = [
       // { path: 'users', name: 'Users', component: Users, meta: { title: 'Users', subtitle: 'User Management & Permissions' } },
       // { path: 'productRegistration', name: 'ProductRegistration', component: ProductRegistration },
       // { path: 'profile', name: 'ProductRegistration', component: ProductRegistration },
-      {
-        path: 'store',
-        children: [
-          { path: 'verification', name: 'StoreVerification', component: Verification, meta: { title: 'Store Verification' } },
-        ]
-      }
+      { path: 'store', children: [{ path: 'verification', name: 'StoreVerification', component: Verification, meta: { title: 'Store Verification' } }] }
     ]
   },
   {
     path: '/admin',
     component: AdminLayout,
-    meta: {
-      requiresAuth: true, role: ['super_admin']
-    },
+    meta: { requiresAuth: true, role: ['super_admin'] },
     children: [
       { path: 'dashboard', name: 'AdminDashboard', component: AdminDashboard, meta: { title: 'Dashboard' } },
+      { path: 'roles-permissions', name: 'admin.role-permissions', component: () => import('../views/system/admin/RolePermissions.vue'), meta: { title: 'Role Permissions' } },
       { path: 'subscription', name: 'AdminSubscription', component: AdminSubscription },
       { path: 'store-validation', name: 'AdminStoreValidation', component: AdminStoreValidation },
       { path: 'customer-validation', name: 'AdminCustomerValidation', component: AdminCustomerValidation },
@@ -99,218 +93,83 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/hr',
     component: HumanResourcesLayout,
-    meta: {
-      requiresAuth: true,
-      preload: true, // Mark this as a preload route
-      cache: true, // Enable caching for this section }, // Uncomment when ready
-      role: ['hr_manager']
-    },
+    meta: { requiresAuth: true, preload: true, cache: true, role: ['hr_manager'] },
     children: [
-      // Dashboard
-      {
-        path: 'index',
-        name: 'hr.dashboard',
-        component: HrDashboard,
-        meta: { title: 'HR Dashboard' }
-      },
-      // Employees
-      {
-        path: 'employees',
-        children: [
-          {
-            path: '',
-            name: 'hr.employees',
-            component: () => import('../views/system/hr/Employees.vue'),
-            meta: { title: 'Employees' }
-          },
-          {
-            path: 'view/:id?',
-            name: 'hr.employees.view',
-            component: () => import('../views/system/hr/EmployeeView.vue'),
-            meta: { title: 'View Employee' }
-          },
-          // {
-          //   path: 'create',
-          //   name: 'hr.employees.create',
-          //   component: () => import('../views/system/hr/EmployeeCreate.vue'),
-          //   meta: { title: 'Create Employee' }
-          // },
-          // {
-          //   path: 'edit/:id',
-          //   name: 'hr.employees.edit',
-          //   component: () => import('../views/system/hr/EmployeeEdit.vue'),
-          //   meta: { title: 'Edit Employee' }
-          // },
-        ]
-      },
-
-      // Shifts (Fixed duplicate path issue)
-      {
-        path: 'shifts',
-        children: [
-          {
-            path: '',
-            name: 'hr.shifts',
-            component: () => import('../views/system/hr/Shift.vue'),
-            meta: { title: 'Shift Management' }
-          },
-          {
-            path: 'employees',
-            name: 'hr.shifts.employees',
-            component: () => import('../views/system/hr/EmployeeShifts.vue'),
-            meta: { title: 'Employee Shifts' }
-          },
-          {
-            path: 'create',
-            name: 'hr.shifts.create',
-            component: () => import('../views/system/hr/CreateShift.vue'),
-            meta: { title: 'Create Shift' }
-          },
-          // {
-          //   path: 'edit/:id',
-          //   name: 'hr.shifts.edit',
-          //   component: () => import('../views/system/hr/EditShift.vue'),
-          //   meta: { title: 'Edit Shift' }
-          // },
-        ]
-      },
-
-      // Attendance
-      {
-        path: 'attendance',
-        name: 'hr.attendance',
-        component: () => import('../views/system/hr/Attendance.vue'),
-        meta: { title: 'Attendance' }
-      },
-
-      // Departments
-      {
-        path: 'departments',
-        name: 'hr.departments',
-        component: () => import('../views/system/hr/Department.vue'),
-        meta: { title: 'Departments' }
-      },
-
-      // Leave Management
-      {
-        path: 'leave-management',
-        name: 'hr.leave',
-        component: () => import('../views/system/hr/LeaveManagement.vue'),
-        meta: { title: 'Leave Management' }
-      },
-      {
-        path: 'leave-balances',
-        name: 'hr.leave.balances',
-        component: () => import('../views/system/hr/LeaveBalances.vue'),
-        meta: { title: 'Leave Balances' }
-      },
-
-      // Analytics
-      {
-        path: 'analytics',
-        name: 'hr.analytics',
-        component: () => import('../views/system/hr/Analytics.vue'),
-        meta: { title: 'Analytics' }
-      },
-
-      // Settings (Fixed typo: Seetings -> Settings)
-      {
-        path: 'settings',
-        name: 'hr.settings',
-        component: () => import('../views/system/hr/Settings.vue'),
-        meta: { title: 'Settings' }
-      },
-
-      // Payroll
-      {
-        path: 'payroll',
-        children: [
-          {
-            path: '',
-            name: 'hr.payroll',
-            component: () => import('../views/system/hr/PayrollList.vue'),
-            meta: { title: 'Payroll' }
-          },
-          {
-            path: 'overview',
-            name: 'hr.payroll.overview',
-            component: () => import('../views/system/hr/PayrollOverview.vue'),
-            meta: { title: 'Payroll Overview' }
-          },
-          {
-            path: 'periods',
-            name: 'hr.payroll.periods',
-            component: () => import('../views/system/hr/PayPeriods.vue'),
-            meta: { title: 'Pay Periods' }
-          },
-          {
-            path: 'lists',
-            name: 'hr.payroll.list',
-            component: () => import('../views/system/hr/PayrollList.vue'),
-            meta: { title: 'Edit Payroll' }
-          },
-          {
-            path: 'create',
-            name: 'hr.payroll.create',
-            component: () => import('../views/system/hr/PayrollCreate.vue'),
-            meta: { title: 'Generate Payroll' }
-          },
-          {
-            path: 'view/:id',
-            name: 'hr.payroll.view',
-            component: () => import('../views/system/hr/PayrollView.vue'),
-            meta: { title: 'View Payroll' }
-          },
-          {
-            path: 'edit/:id',
-            name: 'hr.payroll.edit',
-            component: () => import('../views/system/hr/PayrollEdit.vue'),
-            meta: { title: 'Edit Payroll' }
-          },
-        ]
-      },
-
-      // Redirect for any unmatched HR routes
-      {
-        path: ':pathMatch(.*)*',
-        redirect: { name: 'hr.dashboard' }
-      }
+      { path: 'index', name: 'hr.dashboard', component: HrDashboard, meta: { title: 'HR Dashboard' } },
+      { path: 'employees', children: [
+        { path: '', name: 'hr.employees', component: () => import('../views/system/hr/Employees.vue'), meta: { title: 'Employees' } },
+        { path: 'view/:id?', name: 'hr.employees.view', component: () => import('../views/system/hr/EmployeeView.vue'), meta: { title: 'View Employee' } },
+        // { path: 'create', name: 'hr.employees.create', component: () => import('../views/system/hr/EmployeeCreate.vue'), meta: { title: 'Create Employee' } },
+        // { path: 'edit/:id', name: 'hr.employees.edit', component: () => import('../views/system/hr/EmployeeEdit.vue'), meta: { title: 'Edit Employee' } },
+      ] },
+      { path: 'shifts', children: [
+        { path: '', name: 'hr.shifts', component: () => import('../views/system/hr/Shift.vue'), meta: { title: 'Shift Management' } },
+        { path: 'employees', name: 'hr.shifts.employees', component: () => import('../views/system/hr/EmployeeShifts.vue'), meta: { title: 'Employee Shifts' } },
+        { path: 'create', name: 'hr.shifts.create', component: () => import('../views/system/hr/CreateShift.vue'), meta: { title: 'Create Shift' } },
+        // { path: 'edit/:id', name: 'hr.shifts.edit', component: () => import('../views/system/hr/EditShift.vue'), meta: { title: 'Edit Shift' } },
+      ] },
+      { path: 'attendance', name: 'hr.attendance', component: () => import('../views/system/hr/Attendance.vue'), meta: { title: 'Attendance' } },
+      { path: 'departments', name: 'hr.departments', component: () => import('../views/system/hr/Department.vue'), meta: { title: 'Departments' } },
+      { path: 'leave-management', name: 'hr.leave', component: () => import('../views/system/hr/LeaveManagement.vue'), meta: { title: 'Leave Management' } },
+      { path: 'leave-balances', name: 'hr.leave.balances', component: () => import('../views/system/hr/LeaveBalances.vue'), meta: { title: 'Leave Balances' } },
+      { path: 'analytics', name: 'hr.analytics', component: () => import('../views/system/hr/Analytics.vue'), meta: { title: 'Analytics' } },
+      { path: 'settings', name: 'hr.settings', component: () => import('../views/system/hr/Settings.vue'), meta: { title: 'Settings' } },
+      { path: 'payroll', children: [
+        { path: '', name: 'hr.payroll', component: () => import('../views/system/hr/PayrollList.vue'), meta: { title: 'Payroll' } },
+        { path: 'overview', name: 'hr.payroll.overview', component: () => import('../views/system/hr/PayrollOverview.vue'), meta: { title: 'Payroll Overview' } },
+        { path: 'periods', name: 'hr.payroll.periods', component: () => import('../views/system/hr/PayPeriods.vue'), meta: { title: 'Pay Periods' } },
+        { path: 'lists', name: 'hr.payroll.list', component: () => import('../views/system/hr/PayrollList.vue'), meta: { title: 'Edit Payroll' } },
+        { path: 'create', name: 'hr.payroll.create', component: () => import('../views/system/hr/PayrollCreate.vue'), meta: { title: 'Generate Payroll' } },
+        { path: 'view/:id', name: 'hr.payroll.view', component: () => import('../views/system/hr/PayrollView.vue'), meta: { title: 'View Payroll' } },
+        { path: 'edit/:id', name: 'hr.payroll.edit', component: () => import('../views/system/hr/PayrollEdit.vue'), meta: { title: 'Edit Payroll' } },
+      ] },
+      { path: ':pathMatch(.*)*', redirect: { name: 'hr.dashboard' } }
     ]
   },
   {
-    path: '/procurement',
-    component: () => import('../layouts/ProcurementLayout.vue'),
-    meta: {
-      requiresAuth: true,
-      role: ['']
-    }
+    path: '/merchandising',
+    component: () => import('../layouts/MerchandisingLayout.vue'),
+    meta: { requiresAuth: true, roles: ['super_admin', 'store_admin', 'store_manager', 'warehouse_manager', 'inventory_staff', 'sales_staff', 'supplier_coordinator'] },
+    children: [
+      { path: 'dashboard', name: 'merchandising.dashboard', component: () => import('../views/system/merchandising/Dashboard.vue'), meta: { title: 'Product Catalog Dashboard', subtitle: 'Overview of your product catalog and inventory', roles: ['super_admin', 'store_admin', 'store_manager', 'warehouse_manager'] } },
+      { path: 'products', name: 'merchandising.products', component: () => import('../views/system/merchandising/products/ProductsList.vue'), meta: { title: 'All Products', subtitle: 'Manage your furniture product catalog', roles: ['super_admin', 'store_admin', 'store_manager', 'warehouse_manager', 'inventory_staff', 'sales_staff', 'supplier_coordinator'] } },
+      { path: 'products/new', name: 'merchandising.products.create', component: () => import('../views/system/merchandising/products/ProductForm.vue'), meta: { title: 'Add New Product', subtitle: 'Create a new furniture product', permission: 'merchandising.products.create', roles: ['super_admin', 'store_admin', 'store_manager'] } },
+      { path: 'products/:id/edit', name: 'merchandising.products.edit', component: () => import('../views/system/merchandising/products/ProductForm.vue'), meta: { title: 'Edit Product', subtitle: 'Update product information', permission: 'merchandising.products.edit', roles: ['super_admin', 'store_admin', 'store_manager'] } },
+      { path: 'products/:id', name: 'merchandising.products.view', component: () => import('../views/system/merchandising/products/ProductView.vue'), meta: { title: 'Product Details', subtitle: 'View product information', permission: 'merchandising.products.view' } },
+      { path: 'variations', name: 'merchandising.variations', component: () => import('../views/system/merchandising/variations/VariationsList.vue'), meta: { title: 'Product Variations', subtitle: 'Manage colors, sizes, and materials', permission: 'merchandising.variations.view', roles: ['super_admin', 'store_admin', 'store_manager', 'warehouse_manager', 'sales_staff'] } },
+      { path: 'assets', name: 'merchandising.assets', component: () => import('../views/system/merchandising/assets/AssetsList.vue'), meta: { title: '3D Models & Assets', subtitle: 'Upload and manage 3D models, images, and videos', permission: 'merchandising.assets.view', roles: ['super_admin', 'store_admin', 'store_manager', 'sales_staff'] } },
+      { path: 'assets/upload', name: 'merchandising.assets.upload', component: () => import('../views/system/merchandising/assets/AssetUpload.vue'), meta: { title: 'Upload Asset', subtitle: 'Upload new 3D model or image', permission: 'merchandising.assets.upload', roles: ['super_admin', 'store_admin', 'store_manager'] } },
+      { path: 'inventory', name: 'merchandising.inventory', component: () => import('../views/system/merchandising/inventory/InventoryList.vue'), meta: { title: 'Inventory Status', subtitle: 'Monitor stock levels across all products', permission: 'merchandising.inventory.view', roles: ['super_admin', 'store_admin', 'store_manager', 'warehouse_manager', 'inventory_staff', 'supplier_coordinator'] } },
+      { path: 'categories', name: 'merchandising.categories', component: () => import('../views/system/merchandising/categories/CategoriesList.vue'), meta: { title: 'Product Categories', subtitle: 'Organize your furniture catalog', permission: 'merchandising.categories.view', roles: ['super_admin', 'store_admin', 'store_manager'] } },
+      { path: 'categories/new', name: 'merchandising.categories.create', component: () => import('../views/system/merchandising/categories/CategoryForm.vue'), meta: { title: 'Add Category', subtitle: 'Create a new product category', permission: 'merchandising.categories.edit', roles: ['super_admin', 'store_admin', 'store_manager'] } },
+      { path: 'categories/:id/edit', name: 'merchandising.categories.edit', component: () => import('../views/system/merchandising/categories/CategoryForm.vue'), meta: { title: 'Edit Category', subtitle: 'Update category information', permission: 'merchandising.categories.edit', roles: ['super_admin', 'store_admin', 'store_manager'] } },
+      { path: 'attributes', name: 'merchandising.attributes', component: () => import('../views/system/merchandising/attributes/AttributesList.vue'), meta: { title: 'Product Attributes', subtitle: 'Define filterable product characteristics', permission: 'merchandising.attributes.view', roles: ['super_admin', 'store_admin', 'store_manager'] } },
+      { path: 'attributes/new', name: 'merchandising.attributes.create', component: () => import('../views/system/merchandising/attributes/AttributeForm.vue'), meta: { title: 'Add Attribute', subtitle: 'Create a new product attribute', permission: 'merchandising.attributes.edit', roles: ['super_admin', 'store_admin', 'store_manager'] } },
+      { path: 'tags', name: 'merchandising.tags', component: () => import('../views/system/merchandising/tags/TagsList.vue'), meta: { title: 'Tags & Collections', subtitle: 'Manage product tags and collections', permission: 'merchandising.tags.view', roles: ['super_admin', 'store_admin', 'store_manager'] } },
+      { path: 'pricing', name: 'merchandising.pricing', component: () => import('../views/system/merchandising/pricing/PricingRules.vue'), meta: { title: 'Pricing Rules', subtitle: 'Set discounts and pricing strategies', permission: 'merchandising.pricing.view', roles: ['super_admin', 'store_admin', 'store_manager'] } },
+      { path: 'pricing/bulk-update', name: 'merchandising.pricing.bulk', component: () => import('../views/system/merchandising/pricing/BulkPricing.vue'), meta: { title: 'Bulk Price Update', subtitle: 'Update multiple product prices at once', permission: 'merchandising.pricing.edit', roles: ['super_admin', 'store_admin', 'store_manager'] } },
+      { path: 'reports', name: 'merchandising.reports', component: () => import('../views/system/merchandising/reports/SalesReports.vue'), meta: { title: 'Sales Reports', subtitle: 'Analyze product performance', permission: 'merchandising.reports.view', roles: ['super_admin', 'store_admin', 'store_manager'] } },
+      { path: 'pricing-history', name: 'merchandising.pricing-history', component: () => import('../views/system/merchandising/reports/PricingHistory.vue'), meta: { title: 'Pricing History', subtitle: 'Track price changes over time', permission: 'merchandising.reports.view', roles: ['super_admin', 'store_admin', 'store_manager'] } },
+      { path: '', redirect: { name: 'merchandising.products' } }
+    ]
   },
   {
     path: '/inventory',
     component: InventoryLayout,
-    children: [
-
-    ]
+    children: []
   },
   {
     path: '/unauthorized',
     name: 'Unauthorized',
     component: Unauthorized,
-    meta: {
-      requiresAuth: false // ADDED: Explicitly mark as not requiring auth
-    }
+    meta: { requiresAuth: false }
   },
   // {
   //   path: '/reset',
   //   name: 'Reset',
   //   component: () => import('../views/auth/Reset.vue')
   // },
-
-  // Redirect old dashboard route to new system structure
-  {
-    path: '/dashboard',
-    redirect: '/system'
-  }
+  { path: '/dashboard', redirect: '/system' }
 ]
 
 const router = createRouter({
@@ -318,94 +177,49 @@ const router = createRouter({
   routes,
 })
 
-router.beforeEach((to, from, next) => {
-  console.log('Navigation guard - Start:', {
-    to: to.path,
-    requiresAuth: to.meta.requiresAuth,
-    requiresGuest: to.meta.requiresGuest,
-    role: to.meta.role
-  })
-
+router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore()
-  const token = authStore.token
   const isAuthenticated = authStore.isAuthenticated
-  const userRole = authStore.userRole
 
-  // Debug logging
-  console.log('Auth store data:', {
+  console.log('🔍 Router guard:', {
+    to: to.path,
+    from: from.path,
     isAuthenticated,
-    userRole,
-    token,
-    user: authStore.user
+    permissionsLoaded: authStore.permissionsLoaded,
+    isLoadingPermissions: authStore.isLoadingPermissions
   })
 
-  // 1. Check if route requires authentication
   if (to.meta.requiresAuth && !isAuthenticated) {
-    console.log('❌ Redirecting to login - requires auth but not authenticated')
-    next({
-      name: 'Login',
-      query: { redirect: to.fullPath }
-    })
-    return
+    console.log('❌ Not authenticated')
+    return next({ name: 'Login', query: { redirect: to.fullPath } })
   }
 
-  // 2. Check role-based access for protected routes
-  if (to.meta.requiresAuth && to.meta.role) {
-    const allowedRoles = Array.isArray(to.meta.role) ? to.meta.role : [to.meta.role]
-
-    console.log('🔐 Role check:', {
-      userRole,
-      allowedRoles,
-      isAllowed: allowedRoles.includes(userRole)
-    })
-
-    if (!userRole || !allowedRoles.includes(userRole)) {
-      console.log(`❌ Access denied: User role "${userRole}" not in allowed roles ${JSON.stringify(allowedRoles)}`)
-      next({ name: 'Unauthorized' })
-      return
+  if (isAuthenticated && !authStore.permissionsLoaded && !authStore.isLoadingPermissions) {
+    console.log('📥 Router guard loading permissions...')
+    await authStore.loadPermissions()
+  } else if (authStore.isLoadingPermissions) {
+    console.log('⏸️ Router guard waiting for permissions to load...')
+    while (authStore.isLoadingPermissions) {
+      await new Promise(resolve => setTimeout(resolve, 50))
     }
-
-    console.log('✅ Role check passed')
   }
 
-  // 3. Redirect authenticated users away from guest/auth pages
-  const isGuestRoute = to.meta.requiresGuest ||
-    to.path === '/login' ||
-    to.path === '/register' ||
-    to.path === '/verify-otp' ||
-    to.path === '/reset'
+  if (to.meta.permission) {
+    const hasPermission = authStore.hasPermission(to.meta.permission as string)
 
-  if (isGuestRoute && isAuthenticated) {
-    console.log('Redirecting authenticated user from guest route:', to.path)
-
-    // Role-based redirect using switch
-    let redirectTo
-
-    switch (userRole) {
-      case 'super_admin':
-        redirectTo = 'admin.dashboard'
-        break
-      case 'store_admin':
-        redirectTo = 'store.dashboard'
-        break
-      case 'store_manager':
-        redirectTo = 'manager.dashboard'
-        break
-      case 'hr_manager':
-        redirectTo = 'hr.dashboard'
-        break
-      default:
-        redirectTo = 'Login'
+    if (!hasPermission) {
+      console.log('❌ Access denied:', to.meta.permission)
+      return next({ name: 'Unauthorized' })
     }
-
-    console.log(`➡️ Redirecting to: ${redirectTo}`)
-    next({ name: redirectTo })
-    return // ✅ CRITICAL: Stop execution here
   }
 
-  // 4. Allow navigation (only reaches here if no redirects happened)
-  console.log('✅ Allowing navigation to:', to.path)
-  next() // Only called once at the end
+  if (to.meta.requiresGuest && isAuthenticated) {
+    console.log('ℹ️ Redirecting authenticated user')
+    return next(authStore.defaultRoute)
+  }
+
+  console.log('✅ Navigation allowed')
+  next()
 })
 
 export default router

@@ -2,7 +2,7 @@
 <template>
     <div class="flex h-screen w-full max-w-[200vw] overflow-hidden">
         <!-- Sidebar -->
-        <aside class="sidebar bg-gray-50 w-64 shadow-lg flex flex-col z-30 overflow-y-auto">
+        <aside class="sidebar w-64 flex flex-col z-30 overflow-y-auto" style="background-color: #f0f3fa;">
             <!-- Logo section -->
             <div class="px-5 py-4 border-b border-gray-200">
                 <div class="flex items-center gap-3">
@@ -56,15 +56,15 @@
                             </router-link>
     
                             <!-- <router-link to="/hr/settings/users"
-                                class="text-sm flex items-center space-x-3 py-2 px-4 rounded-lg text-gray-500 hover:bg-white hover:shadow transition-colors">
-                                <i class="pi pi-users text-gray-400 w-5"></i>
-                                <span>Users</span>
-                            </router-link>
-                            <router-link to="/hr/settings/roles"
-                                class="text-sm flex items-center space-x-3 py-2 px-4 rounded-lg text-gray-500 hover:bg-white hover:shadow transition-colors">
-                                <i class="pi pi-shield text-gray-400 w-5"></i>
-                                <span>Roles & Permissions</span>
-                            </router-link> -->
+                                    class="text-sm flex items-center space-x-3 py-2 px-4 rounded-lg text-gray-500 hover:bg-white hover:shadow transition-colors">
+                                    <i class="pi pi-users text-gray-400 w-5"></i>
+                                    <span>Users</span>
+                                </router-link>
+                                <router-link to="/hr/settings/roles"
+                                    class="text-sm flex items-center space-x-3 py-2 px-4 rounded-lg text-gray-500 hover:bg-white hover:shadow transition-colors">
+                                    <i class="pi pi-shield text-gray-400 w-5"></i>
+                                    <span>Roles & Permissions</span>
+                                </router-link> -->
                         </div>
                     </div>
     
@@ -225,12 +225,12 @@ const menuItems = [
     icon: "pi pi-clock text-gray-500 w-5"  // Perfect for shifts/scheduling
     // Alternative: "pi pi-calendar-plus" for schedule creation
   },
-//   {
-//     to: "/hr/analytics",
-//     label: "Analytics",
-//     icon: "pi pi-chart-line text-gray-500 w-5"  // Better than scatter for HR metrics
-//     // Alternative: "pi pi-chart-bar" for comparison data
-//   }
+  //   {
+  //     to: "/hr/analytics",
+  //     label: "Analytics",
+  //     icon: "pi pi-chart-line text-gray-500 w-5"  // Better than scatter for HR metrics
+  //     // Alternative: "pi pi-chart-bar" for comparison data
+  //   }
 ]
 
 const teamManagementItems = [

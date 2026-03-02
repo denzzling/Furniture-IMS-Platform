@@ -142,6 +142,11 @@ const adminMenu = [
     icon: "pi pi-building text-gray-500 w-5"
   },
   {
+    to: "/admin/roles-permissions",
+    label: "Roles & Permissions",
+    icon: "pi pi-shield"
+  },
+  {
     to: "/admin/analytics-&-reports",
     label: "Analytics & Reports",
     icon: "pi pi-chart-bar text-gray-500 w-5"

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\Admin\RolePermissionController;
 use App\Http\Controllers\Api\Hr\AttendanceController;
 use App\Http\Controllers\Api\Ims\Catalog\CategoryController;
 use App\Http\Controllers\Api\Ims\Catalog\ProductController;
@@ -45,11 +46,31 @@ Route::prefix('auth')->group(function () {
     Route::post('verify-otp', [VerifyEmailController::class, 'verifyOtpApi']);
     Route::post('resend-otp', [VerifyEmailController::class, 'resendOtpApi']);
 });
-// routes/api.php
+
 // ========== PROTECTED ROUTES ==========
 Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::get('/user/navigation', [UserNavigationController::class, 'getUserNavigation']);
     Route::post('/user/check-permission', [UserNavigationController::class, 'checkPermission']);
+
+    Route::prefix('admin')->group(function () {
+        Route::get('/roles', [RolePermissionController::class, 'getRoles']);
+        Route::get('/roles/{id}/permissions', [RolePermissionController::class, 'getRolePermissions']);
+        Route::post('/roles/{id}/permissions', [RolePermissionController::class, 'updateRolePermissions']);
+
+        // Permissions
+        Route::get('/permissions', [RolePermissionController::class, 'getPermissions']);
+        Route::post('/permissions', [RolePermissionController::class, 'createPermission']);
+        Route::put('/permissions/{id}', [RolePermissionController::class, 'updatePermission']);
+        Route::delete('/permissions/{id}', [RolePermissionController::class, 'deletePermission']);
+
+        // Navigation Items
+        Route::get('/navigation-items', [RolePermissionController::class, 'getNavigationItems']);
+        Route::post('/navigation-items', [RolePermissionController::class, 'createNavigationItem']);
+        Route::put('/navigation-items/{id}', [RolePermissionController::class, 'updateNavigationItem']);
+        Route::delete('/navigation-items/{id}', [RolePermissionController::class, 'deleteNavigationItem']);
+    });
+
+
 
     // ========== AUTHENTICATION ==========
     Route::prefix('auth')->group(function () {

@@ -5,14 +5,14 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Models\Core\Permission;        // ✅ Updated namespace
+use App\Models\Core\NavigationItem;    // ✅ Updated namespace
+use App\Models\Core\UserPermission;    // ✅ Updated namespace
 
 class UserNavigationController extends Controller
 {
     /**
      * Get user's navigation items and permissions based on their role
-     * 
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
      */
     public function getUserNavigation(Request $request)
     {
@@ -24,7 +24,7 @@ class UserNavigationController extends Controller
             ], 401);
         }
 
-        // Get user's role (assuming you have a role relationship or role_id column)
+        // Get user's role
         $roleId = $user->role_id ?? null;
         
         if (!$roleId) {
@@ -35,15 +35,13 @@ class UserNavigationController extends Controller
             ], 403);
         }
 
-        // ==========================================
-        // 1. Get all permissions for user's role
-        // ==========================================
+        // Get all permissions for user's role
         $rolePermissions = DB::table('role_permissions')
             ->where('role_id', $roleId)
             ->pluck('permission_id')
             ->toArray();
 
-        // Get user-specific permission overrides (grants/revokes)
+        // Get user-specific permission overrides
         $userGrants = DB::table('user_permissions')
             ->where('user_id', $user->id)
             ->where('type', 'grant')
@@ -56,7 +54,7 @@ class UserNavigationController extends Controller
             ->pluck('permission_id')
             ->toArray();
 
-        // Merge role permissions with user-specific grants, then remove revokes
+        // Merge permissions
         $finalPermissionIds = array_diff(
             array_unique(array_merge($rolePermissions, $userGrants)),
             $userRevokes
@@ -69,9 +67,7 @@ class UserNavigationController extends Controller
             ->pluck('name')
             ->toArray();
 
-        // ==========================================
-        // 2. Get navigation items user can access
-        // ==========================================
+        // Get navigation items
         $navigationItems = DB::table('navigation_items as ni')
             ->select(
                 'ni.id',
@@ -95,7 +91,6 @@ class UserNavigationController extends Controller
             ->orderBy('ni.display_order')
             ->get()
             ->map(function ($item) {
-                // Decode JSON meta field
                 $item->meta = $item->meta ? json_decode($item->meta, true) : null;
                 return $item;
             });
@@ -105,7 +100,7 @@ class UserNavigationController extends Controller
             'navigation' => $navigationItems,
             'user' => [
                 'id' => $user->id,
-                'name' => $user->first_name . ' ' . $user->last_name,
+                'name' => ($user->first_name ?? '') . ' ' . ($user->last_name ?? ''),
                 'email' => $user->email,
                 'role' => $user->role ?? 'unknown'
             ]
@@ -114,9 +109,6 @@ class UserNavigationController extends Controller
 
     /**
      * Check if user has a specific permission
-     * 
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
      */
     public function checkPermission(Request $request)
     {
@@ -126,14 +118,12 @@ class UserNavigationController extends Controller
 
         $user = $request->user();
         $permissionName = $request->input('permission');
-
         $roleId = $user->role_id ?? null;
 
         if (!$roleId) {
             return response()->json(['has_permission' => false]);
         }
 
-        // Get permission ID
         $permission = DB::table('permissions')
             ->where('name', $permissionName)
             ->where('is_active', true)
@@ -143,20 +133,17 @@ class UserNavigationController extends Controller
             return response()->json(['has_permission' => false]);
         }
 
-        // Check role permissions
         $hasRolePermission = DB::table('role_permissions')
             ->where('role_id', $roleId)
             ->where('permission_id', $permission->id)
             ->exists();
 
-        // Check user-specific grants
         $hasUserGrant = DB::table('user_permissions')
             ->where('user_id', $user->id)
             ->where('permission_id', $permission->id)
             ->where('type', 'grant')
             ->exists();
 
-        // Check user-specific revokes
         $hasUserRevoke = DB::table('user_permissions')
             ->where('user_id', $user->id)
             ->where('permission_id', $permission->id)

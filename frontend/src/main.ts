@@ -7,7 +7,7 @@ import PrimeVue from 'primevue/config'
 import Aura from '@primeuix/themes/aura'
 import 'primeicons/primeicons.css'
 import App from './App.vue'
-import router from './router' 
+import router from './router'
 import axios from 'axios'
 
 import Card from 'primevue/card'
@@ -40,6 +40,7 @@ import Tooltip from 'primevue/tooltip'
 import Textarea from 'primevue/textarea'
 import ScrollTop from 'primevue/scrolltop'
 import Skeleton from 'primevue/skeleton'
+import Paginator from 'primevue/paginator'
 
 // ==================== AXIOS CONFIGURATION ====================
 axios.defaults.baseURL = 'http://localhost:8000'
@@ -50,42 +51,46 @@ axios.defaults.withXSRFToken = true
 const pendingRequests = new Map<string, AbortController>()
 
 const generateRequestKey = (config: any): string => {
-    if (config.method?.toLowerCase() !== 'get') return ''
-    return `GET:${config.url}:${JSON.stringify(config.params ?? {})}`
+  // ✅ Deduplicate ALL requests (not just GET)
+  return `${config.method?.toUpperCase()}:${config.url}:${JSON.stringify(config.data ?? config.params ?? {})}`
 }
 
 axios.interceptors.request.use((config) => {
-    const key = generateRequestKey(config)
-    if (key) {
-        if (pendingRequests.has(key)) {
-            const controller = new AbortController()
-            controller.abort()
-            config.signal = controller.signal
-        } else {
-            const controller = new AbortController()
-            pendingRequests.set(key, controller)
-            config.signal = controller.signal
-        }
-    }
-    return config
+  const key = generateRequestKey(config)
+
+  if (pendingRequests.has(key)) {
+    console.warn('⚠️ Duplicate request detected:', key)
+    const controller = new AbortController()
+    controller.abort()
+    config.signal = controller.signal
+  } else {
+    const controller = new AbortController()
+    pendingRequests.set(key, controller)
+    config.signal = controller.signal
+  }
+
+  return config
 })
 
 axios.interceptors.response.use(
-    (response) => {
-        const key = generateRequestKey(response.config)
-        if (key) pendingRequests.delete(key)
-        return response
-    },
-    (error) => {
-        if (error.config) {
-            const key = generateRequestKey(error.config)
-            if (key) pendingRequests.delete(key)
-        }
-        if (error.name === 'CanceledError' || error.code === 'ERR_CANCELED') {
-            return new Promise(() => {})
-        }
-        return Promise.reject(error)
+  (response) => {
+    const key = generateRequestKey(response.config)
+    pendingRequests.delete(key)
+    return response
+  },
+  (error) => {
+    if (error.config) {
+      const key = generateRequestKey(error.config)
+      pendingRequests.delete(key)
     }
+
+    if (error.name === 'CanceledError' || error.code === 'ERR_CANCELED') {
+      console.log('🚫 Duplicate request cancelled:', error.config?.url)
+      return new Promise(() => { })
+    }
+
+    return Promise.reject(error)
+  }
 )
 
 // ==================== APP INITIALIZATION ====================
@@ -97,12 +102,12 @@ app.use(pinia)
 
 // Configure PrimeVue
 app.use(PrimeVue, {
-    theme: {
-        preset: Aura,
-        options: {
-            darkModeSelector: '.my-app-dark',
-        }
+  theme: {
+    preset: Aura,
+    options: {
+      darkModeSelector: '.my-app-dark',
     }
+  }
 })
 
 app.use(ToastService)
@@ -110,38 +115,39 @@ app.use(router)
 
 // Register PrimeVue components
 const components = {
-    Skeleton,
-    ScrollTop,
-    Tabs,
-    Tab,
-    TabList,
-    TabPanels,
-    TabPanel,
-    InputNumber,
-    Card,
-    Avatar,
-    InputText,
-    Textarea,
-    InputIcon,
-    Password,
-    Button,
-    Checkbox,
-    Message,
-    Dialog,
-    ProgressSpinner,
-    DataTable,
-    Column,
-    Row,
-    Badge,
-    DatePicker,
-    Tag,
-    Select,
-    IconField,
-    RadioButton,
+  Paginator,
+  Skeleton,
+  ScrollTop,
+  Tabs,
+  Tab,
+  TabList,
+  TabPanels,
+  TabPanel,
+  InputNumber,
+  Card,
+  Avatar,
+  InputText,
+  Textarea,
+  InputIcon,
+  Password,
+  Button,
+  Checkbox,
+  Message,
+  Dialog,
+  ProgressSpinner,
+  DataTable,
+  Column,
+  Row,
+  Badge,
+  DatePicker,
+  Tag,
+  Select,
+  IconField,
+  RadioButton,
 }
 
 Object.entries(components).forEach(([name, component]) => {
-    app.component(name, component)
+  app.component(name, component)
 })
 
 app.directive('tooltip', Tooltip)
@@ -152,18 +158,14 @@ const authStore = useAuthStore()
 
 // Set Authorization header if token exists in localStorage
 if (authStore.token) {
-    axios.defaults.headers.common['Authorization'] = `Bearer ${authStore.token}`
-    console.log('🔐 Auth token restored from localStorage')
+  axios.defaults.headers.common['Authorization'] = `Bearer ${authStore.token}`
+  console.log('🔐 Token restored from localStorage')
+
+  // Initialize permissions (async, but don't wait)
+  authStore.initialize().catch(err => {
+    console.warn('⚠️ Failed to initialize permissions:', err)
+  })
 }
 
-// Initialize permissions (only if user is logged in)
-authStore.initialize()
-    .then(() => {
-        console.log('✅ Auth store initialized')
-        app.mount('#app')
-    })
-    .catch((error) => {
-        console.error('❌ Auth initialization failed:', error)
-        // Mount anyway - login page will handle unauthenticated state
-        app.mount('#app')
-    })
+// ✅ Mount immediately (don't wait for initialize)
+app.mount('#app')
