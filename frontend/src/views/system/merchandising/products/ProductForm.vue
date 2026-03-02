@@ -1,367 +1,425 @@
 <template>
-  <div class="max-w-5xl mx-auto space-y-4 md:space-y-6 pb-20 md:pb-6">
-    <!-- Header -->
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-      <div>
-        <h2 class="text-xl md:text-2xl font-bold text-gray-800">
-          {{ isEditMode ? 'Edit Product' : 'Add New Product' }}
-        </h2>
-        <p class="text-xs md:text-sm text-gray-500 mt-1">
-          {{ isEditMode ? 'Update product information' : 'Create a new furniture product' }}
-        </p>
-      </div>
-      <Button 
-        label="Back" 
-        icon="pi pi-arrow-left" 
-        text 
-        size="small"
-        @click="$router.push({ name: 'merchandising.products' })" 
-        class="self-start sm:self-auto"
-      />
-    </div>
-
+  <div class="max-w-7xl mx-auto space-y-6 pb-6">
     <!-- Loading Skeleton -->
-    <div v-if="loadingData" class="space-y-4">
-      <Skeleton height="200px" class="rounded-lg" />
-      <Skeleton height="300px" class="rounded-lg" />
-      <Skeleton height="200px" class="rounded-lg" />
+    <div v-if="loadingData" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div class="lg:col-span-2 space-y-6">
+        <Skeleton height="400px" class="rounded-lg" />
+        <Skeleton height="300px" class="rounded-lg" />
+      </div>
+      <div class="lg:col-span-1">
+        <Skeleton height="600px" class="rounded-lg" />
+      </div>
     </div>
-
+  
     <!-- Form -->
-    <form v-else @submit.prevent="handleSubmit" class="space-y-4 md:space-y-6">
-      <!-- Basic Information -->
-      <Card>
-        <template #title>
-          <div class="flex items-center gap-2 text-base md:text-lg">
-            <i class="pi pi-info-circle text-blue-600"></i>
-            Basic Information
-          </div>
-        </template>
-        <template #content>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-            <div class="flex flex-col gap-2">
-              <label for="product_name" class="text-xs md:text-sm font-semibold text-gray-700">
-                Product Name <span class="text-red-500">*</span>
-              </label>
-              <InputText 
-                id="product_name"
-                v-model="form.name" 
-                placeholder="e.g., Modern L-Shaped Sectional" 
-                :class="{ 'p-invalid': errors.name }"
-                class="text-sm"
-              />
-              <small v-if="errors.name" class="text-red-500 text-xs">{{ errors.name }}</small>
-            </div>
-
-            <div class="flex flex-col gap-2">
-              <label for="sku" class="text-xs md:text-sm font-semibold text-gray-700">
-                SKU <span class="text-red-500">*</span>
-              </label>
-              <InputText 
-                id="sku"
-                v-model="form.sku" 
-                placeholder="e.g., CAPS-SOFA-MOD-001" 
-                :class="{ 'p-invalid': errors.sku }"
-                class="text-sm"
-              />
-              <small v-if="errors.sku" class="text-red-500 text-xs">{{ errors.sku }}</small>
-            </div>
-
-            <div class="flex flex-col gap-2">
-              <label for="category" class="text-xs md:text-sm font-semibold text-gray-700">
-                Category <span class="text-red-500">*</span>
-              </label>
-              <Select 
-                id="category"
-                v-model="form.category_id" 
-                :options="categories" 
-                optionLabel="category_name" 
-                optionValue="id"
-                placeholder="Select a category" 
-                :class="{ 'p-invalid': errors.category_id }"
-                class="text-sm"
-                :loading="loadingCategories"
-              />
-              <small v-if="errors.category_id" class="text-red-500 text-xs">{{ errors.category_id }}</small>
-            </div>
-
-            <div class="flex flex-col gap-2">
-              <label for="status" class="text-xs md:text-sm font-semibold text-gray-700">
-                Status <span class="text-red-500">*</span>
-              </label>
-              <Select 
-                id="status"
-                v-model="form.status" 
-                :options="statusOptions" 
-                optionLabel="label" 
-                optionValue="value"
-                placeholder="Select status" 
-                class="text-sm"
-              />
-            </div>
-
-            <div class="md:col-span-2 flex flex-col gap-2">
-              <label for="description" class="text-xs md:text-sm font-semibold text-gray-700">
-                Description
-              </label>
-              <Textarea 
-                id="description"
-                v-model="form.description" 
-                rows="4" 
-                placeholder="Enter product description..."
-                class="text-sm"
-              />
-            </div>
-          </div>
-        </template>
-      </Card>
-
-      <!-- Pricing & Inventory -->
-      <Card>
-        <template #title>
-          <div class="flex items-center gap-2 text-base md:text-lg">
-            <i class="pi pi-dollar text-green-600"></i>
-            Pricing & Inventory
-          </div>
-        </template>
-        <template #content>
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-            <div class="flex flex-col gap-2">
-              <label for="price" class="text-xs md:text-sm font-semibold text-gray-700">
-                Selling Price ($) <span class="text-red-500">*</span>
-              </label>
-              <InputNumber 
-                id="price"
-                v-model="form.price" 
-                mode="currency" 
-                currency="USD" 
-                locale="en-US"
-                :class="{ 'p-invalid': errors.price }"
-                inputClass="text-sm"
-              />
-              <small v-if="errors.price" class="text-red-500 text-xs">{{ errors.price }}</small>
-            </div>
-
-            <div class="flex flex-col gap-2">
-              <label for="cost_price" class="text-xs md:text-sm font-semibold text-gray-700">
-                Cost Price ($)
-              </label>
-              <InputNumber 
-                id="cost_price"
-                v-model="form.cost_price" 
-                mode="currency" 
-                currency="USD" 
-                locale="en-US"
-                inputClass="text-sm"
-              />
-              <small class="text-gray-500 text-xs">For profit calculation</small>
-            </div>
-
-            <div class="flex flex-col gap-2">
-              <label for="stock_quantity" class="text-xs md:text-sm font-semibold text-gray-700">
-                Stock Quantity <span class="text-red-500">*</span>
-              </label>
-              <InputNumber 
-                id="stock_quantity"
-                v-model="form.stock_quantity" 
-                :min="0"
-                :class="{ 'p-invalid': errors.stock_quantity }"
-                inputClass="text-sm"
-              />
-              <small v-if="errors.stock_quantity" class="text-red-500 text-xs">{{ errors.stock_quantity }}</small>
-            </div>
-
-            <div class="flex flex-col gap-2">
-              <label for="min_stock_level" class="text-xs md:text-sm font-semibold text-gray-700">
-                Minimum Stock Level
-              </label>
-              <InputNumber 
-                id="min_stock_level"
-                v-model="form.min_stock_level" 
-                :min="0"
-                inputClass="text-sm"
-              />
-              <small class="text-gray-500 text-xs">Alert when stock falls below this level</small>
-            </div>
-
-            <div class="flex flex-col gap-2">
-              <label for="weight" class="text-xs md:text-sm font-semibold text-gray-700">
-                Weight (kg)
-              </label>
-              <InputNumber 
-                id="weight"
-                v-model="form.weight" 
-                :minFractionDigits="2"
-                :maxFractionDigits="2"
-                inputClass="text-sm"
-              />
-            </div>
-
-            <div class="flex flex-col gap-2">
-              <label class="text-xs md:text-sm font-semibold text-gray-700">
-                Track Inventory
-              </label>
-              <div class="flex items-center gap-3 mt-2">
-                <Checkbox v-model="form.track_inventory" inputId="track_inventory" :binary="true" />
-                <label for="track_inventory" class="text-xs md:text-sm text-gray-600 cursor-pointer">
-                  Enable inventory tracking
-                </label>
-              </div>
-            </div>
-          </div>
-        </template>
-      </Card>
-
-      <!-- Dimensions -->
-      <Card>
-        <template #title>
-          <div class="flex items-center gap-2 text-base md:text-lg">
-            <i class="pi pi-box text-purple-600"></i>
-            Dimensions
-          </div>
-        </template>
-        <template #content>
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6">
-            <div class="flex flex-col gap-2">
-              <label for="length" class="text-xs md:text-sm font-semibold text-gray-700">
-                Length (cm)
-              </label>
-              <InputNumber 
-                id="length"
-                v-model="form.dimensions.length" 
-                :minFractionDigits="2"
-                suffix=" cm"
-                inputClass="text-sm"
-              />
-            </div>
-
-            <div class="flex flex-col gap-2">
-              <label for="width" class="text-xs md:text-sm font-semibold text-gray-700">
-                Width (cm)
-              </label>
-              <InputNumber 
-                id="width"
-                v-model="form.dimensions.width" 
-                :minFractionDigits="2"
-                suffix=" cm"
-                inputClass="text-sm"
-              />
-            </div>
-
-            <div class="flex flex-col gap-2">
-              <label for="height" class="text-xs md:text-sm font-semibold text-gray-700">
-                Height (cm)
-              </label>
-              <InputNumber 
-                id="height"
-                v-model="form.dimensions.height" 
-                :minFractionDigits="2"
-                suffix=" cm"
-                inputClass="text-sm"
-              />
-            </div>
-          </div>
-        </template>
-      </Card>
-
-      <!-- Images -->
-      <Card>
-        <template #title>
-          <div class="flex items-center gap-2 text-base md:text-lg">
-            <i class="pi pi-images text-pink-600"></i>
-            Product Images
-          </div>
-        </template>
-        <template #content>
-          <FileUpload 
-            mode="advanced" 
-            name="images[]" 
-            accept="image/*" 
-            :maxFileSize="5000000"
-            :multiple="true"
-            :auto="false"
-            :customUpload="true"
-            @uploader="uploadImages"
-            class="w-full"
-          >
-            <template #empty>
-              <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 md:p-8 text-center">
-                <i class="pi pi-cloud-upload text-3xl md:text-4xl text-gray-400 mb-3 md:mb-4"></i>
-                <p class="text-sm md:text-base text-gray-600 mb-2">Drag and drop images here</p>
-                <p class="text-xs md:text-sm text-gray-500">Supported formats: JPG, PNG, WebP (Max 5MB each)</p>
+    <form v-else @submit.prevent="handleSubmit">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- LEFT COLUMN (2/3) - Basic Info, Pricing, Specs, SEO -->
+        <div class="lg:col-span-2 space-y-6">
+  
+          <!-- Basic Information Card -->
+          <Card>
+            <template #title>
+              <div class="flex items-center gap-2">
+                <i class="pi pi-info-circle text-blue-600"></i>
+                <span>Basic Information</span>
               </div>
             </template>
-          </FileUpload>
-          
-          <!-- Uploaded Images Preview -->
-          <div v-if="form.images && form.images.length > 0" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 md:gap-4 mt-4">
-            <div v-for="(image, index) in form.images" :key="index" class="relative group">
-              <img :src="image" :alt="`Product image ${index + 1}`" class="w-full h-32 object-cover rounded-lg border border-gray-200" />
-              <Button 
-                icon="pi pi-times" 
-                severity="danger" 
-                rounded 
-                size="small"
-                class="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                @click="removeImage(index)"
-              />
-            </div>
+            <template #content>
+              <div class="space-y-4">
+                <!-- Product Name -->
+                <div class="flex flex-col gap-2">
+                  <label for="product_name" class="text-sm font-semibold text-gray-700">
+                    Product Name <span class="text-red-500">*</span>
+                  </label>
+                  <InputText id="product_name" v-model="form.product_name"
+                    placeholder="e.g., Modern L-Shaped Sectional Sofa" :class="{ 'p-invalid': errors.product_name }"
+                    @input="generateSKU" />
+                  <small v-if="errors.product_name" class="text-red-500">{{ errors.product_name }}</small>
+                </div>
+  
+                <!-- SKU (Auto-generated) -->
+                <div class="flex flex-col gap-2">
+                  <label for="sku" class="text-sm font-semibold text-gray-700">
+                    SKU (Auto-generated) <span class="text-red-500">*</span>
+                  </label>
+                  <div class="flex gap-2">
+                    <InputText id="sku" v-model="form.sku" placeholder="Will be auto-generated"
+                      :class="{ 'p-invalid': errors.sku }" readonly class="flex-1" />
+                    <Button icon="pi pi-copy" v-tooltip.top="'Copy SKU'" severity="secondary" outlined @click="copySKU"
+                      :disabled="!form.sku" />
+                    <Button icon="pi pi-refresh" v-tooltip.top="'Regenerate SKU'" severity="secondary" outlined
+                      @click="generateSKU" :disabled="!form.product_name || !form.category_id" />
+                  </div>
+                  <small class="text-gray-500">Format: CATEGORY-ATTRIBUTE-001</small>
+                  <small v-if="errors.sku" class="text-red-500">{{ errors.sku }}</small>
+                </div>
+  
+                <!-- Category & Subcategory -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div class="flex flex-col gap-2">
+                    <label for="category" class="text-sm font-semibold text-gray-700">
+                      Category <span class="text-red-500">*</span>
+                    </label>
+                    <Select id="category" v-model="form.category_id" :options="categories" optionLabel="category_name"
+                      optionValue="id" placeholder="Select a category" :class="{ 'p-invalid': errors.category_id }"
+                      :loading="loadingCategories" @change="onCategoryChange" />
+                    <small v-if="errors.category_id" class="text-red-500">{{ errors.category_id }}</small>
+                  </div>
+  
+                  <div class="flex flex-col gap-2">
+                    <label for="subcategory" class="text-sm font-semibold text-gray-700">
+                      Subcategory
+                    </label>
+                    <Select id="subcategory" v-model="form.subcategory_id" :options="subcategories"
+                      optionLabel="category_name" optionValue="id" placeholder="Select subcategory" showClear
+                      :disabled="!form.category_id" />
+                  </div>
+                </div>
+  
+                <!-- Brand & Collection -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div class="flex flex-col gap-2">
+                    <label for="brand" class="text-sm font-semibold text-gray-700">
+                      Brand
+                    </label>
+                    <InputText id="brand" v-model="form.brand" placeholder="e.g., IKEA, Ashley Furniture"
+                      @input="generateSKU" />
+                  </div>
+  
+                  <div class="flex flex-col gap-2">
+                    <label for="collection" class="text-sm font-semibold text-gray-700">
+                      Collection Name
+                    </label>
+                    <InputText id="collection" v-model="form.collection_name" placeholder="e.g., Summer 2024" />
+                  </div>
+                </div>
+  
+                <!-- Stock Status -->
+                <div class="flex flex-col gap-2">
+                  <label for="stock_status" class="text-sm font-semibold text-gray-700">
+                    Stock Status <span class="text-red-500">*</span>
+                  </label>
+                  <Select id="stock_status" v-model="form.stock_status" :options="stockStatusOptions"
+                    placeholder="Select stock status" />
+                </div>
+  
+                <!-- Description -->
+                <div class="flex flex-col gap-2">
+                  <label for="description" class="text-sm font-semibold text-gray-700">
+                    Description
+                  </label>
+                  <Textarea id="description" v-model="form.description" rows="5"
+                    placeholder="Enter detailed product description..." />
+                </div>
+  
+                <!-- Product Flags -->
+                <div class="flex flex-wrap gap-4 pt-2">
+                  <div class="flex items-center gap-2">
+                    <Checkbox v-model="form.is_featured" inputId="featured" :binary="true" />
+                    <label for="featured" class="text-sm font-medium cursor-pointer">Featured</label>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <Checkbox v-model="form.is_new_arrival" inputId="newArrival" :binary="true" />
+                    <label for="newArrival" class="text-sm font-medium cursor-pointer">New Arrival</label>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <Checkbox v-model="form.is_bestseller" inputId="bestseller" :binary="true" />
+                    <label for="bestseller" class="text-sm font-medium cursor-pointer">Bestseller</label>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <Checkbox v-model="form.assembly_required" inputId="assembly" :binary="true" />
+                    <label for="assembly" class="text-sm font-medium cursor-pointer">Assembly Required</label>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <Checkbox v-model="form.is_active" inputId="active" :binary="true" />
+                    <label for="active" class="text-sm font-medium cursor-pointer">Active</label>
+                  </div>
+                </div>
+              </div>
+            </template>
+          </Card>
+  
+          <!-- Pricing Card -->
+          <Card>
+            <template #title>
+              <div class="flex items-center gap-2">
+                <i class="pi pi-dollar text-green-600"></i>
+                <span>Pricing</span>
+              </div>
+            </template>
+            <template #content>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="flex flex-col gap-2">
+                  <label for="base_price" class="text-sm font-semibold text-gray-700">
+                    Base Price (₱) <span class="text-red-500">*</span>
+                  </label>
+                  <InputNumber id="base_price" v-model="form.base_price" mode="currency" currency="PHP" locale="en-PH"
+                    :class="{ 'p-invalid': errors.base_price }" :min="0" fluid />
+                  <small v-if="errors.base_price" class="text-red-500">{{ errors.base_price }}</small>
+                </div>
+  
+                <div class="flex flex-col gap-2">
+                  <label for="discounted_price" class="text-sm font-semibold text-gray-700">
+                    Discounted Price (₱)
+                  </label>
+                  <InputNumber id="discounted_price" v-model="form.discounted_price" mode="currency" currency="PHP"
+                    locale="en-PH" :min="0" fluid />
+                  <small class="text-gray-500 text-xs">Leave empty if no discount</small>
+                </div>
+  
+                <div class="flex flex-col gap-2">
+                  <label for="tax_rate" class="text-sm font-semibold text-gray-700">
+                    Tax Rate (%)
+                  </label>
+                  <InputNumber id="tax_rate" v-model="form.tax_rate" suffix="%" :min="0" :max="100" :minFractionDigits="2"
+                    fluid />
+                </div>
+              </div>
+  
+              <!-- Price Change Reason (only when editing and price changed) -->
+              <div v-if="isEditMode && originalBasePrice !== form.base_price" class="mt-4">
+                <label for="price_change_reason" class="text-sm font-semibold text-gray-700 block mb-2">
+                  Price Change Reason <span class="text-red-500">*</span>
+                </label>
+                <InputText id="price_change_reason" v-model="form.price_change_reason"
+                  placeholder="e.g., Seasonal discount, Supplier cost increase" class="w-full" />
+              </div>
+            </template>
+          </Card>
+  
+          <!-- Specifications Card -->
+          <Card>
+            <template #title>
+              <div class="flex items-center gap-2">
+                <i class="pi pi-box text-purple-600"></i>
+                <span>Specifications</span>
+              </div>
+            </template>
+            <template #content>
+              <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="flex flex-col gap-2">
+                  <label for="length" class="text-sm font-semibold text-gray-700">
+                    Length (cm)
+                  </label>
+                  <InputNumber id="length" v-model="form.length_cm" :minFractionDigits="2" suffix=" cm" :min="0" fluid />
+                </div>
+  
+                <div class="flex flex-col gap-2">
+                  <label for="width" class="text-sm font-semibold text-gray-700">
+                    Width (cm)
+                  </label>
+                  <InputNumber id="width" v-model="form.width_cm" :minFractionDigits="2" suffix=" cm" :min="0" fluid />
+                </div>
+  
+                <div class="flex flex-col gap-2">
+                  <label for="height" class="text-sm font-semibold text-gray-700">
+                    Height (cm)
+                  </label>
+                  <InputNumber id="height" v-model="form.height_cm" :minFractionDigits="2" suffix=" cm" :min="0" fluid />
+                </div>
+  
+                <div class="flex flex-col gap-2">
+                  <label for="weight" class="text-sm font-semibold text-gray-700">
+                    Weight (kg)
+                  </label>
+                  <InputNumber id="weight" v-model="form.weight_kg" :minFractionDigits="2" suffix=" kg" :min="0" fluid />
+                </div>
+              </div>
+            </template>
+          </Card>
+  
+          <!-- SEO Card -->
+          <Card>
+            <template #title>
+              <div class="flex items-center gap-2">
+                <i class="pi pi-search text-orange-600"></i>
+                <span>SEO & Metadata</span>
+              </div>
+            </template>
+            <template #content>
+              <div class="space-y-4">
+                <div class="flex flex-col gap-2">
+                  <label for="meta_title" class="text-sm font-semibold text-gray-700">
+                    Meta Title
+                  </label>
+                  <InputText id="meta_title" v-model="form.meta_title" placeholder="SEO optimized title" maxlength="60" />
+                  <small class="text-gray-500">{{ form.meta_title?.length || 0 }}/60 characters</small>
+                </div>
+  
+                <div class="flex flex-col gap-2">
+                  <label for="meta_description" class="text-sm font-semibold text-gray-700">
+                    Meta Description
+                  </label>
+                  <Textarea id="meta_description" v-model="form.meta_description" rows="3"
+                    placeholder="SEO optimized description" maxlength="160" />
+                  <small class="text-gray-500">{{ form.meta_description?.length || 0 }}/160 characters</small>
+                </div>
+  
+                <div class="flex flex-col gap-2">
+                  <label for="meta_keywords" class="text-sm font-semibold text-gray-700">
+                    Meta Keywords
+                  </label>
+                  <InputText id="meta_keywords" v-model="form.meta_keywords"
+                    placeholder="furniture, sofa, modern, living room" />
+                  <small class="text-gray-500">Separate keywords with commas</small>
+                </div>
+  
+                <div class="flex flex-col gap-2">
+                  <label for="published_at" class="text-sm font-semibold text-gray-700">
+                    Publish Date
+                  </label>
+                  <DatePicker id="published_at" v-model="form.published_at" showTime hourFormat="24" class="w-full" />
+                </div>
+              </div>
+            </template>
+          </Card>
+  
+        </div>
+  
+        <!-- RIGHT COLUMN (1/3) - 3D Models & Assets -->
+        <div class="lg:col-span-1">
+          <div class="sticky top-6">
+            <Card>
+              <template #title>
+                <div class="flex items-center gap-2">
+                  <i class="pi pi-cube text-indigo-600"></i>
+                  <span>3D Model & Assets</span>
+                </div>
+              </template>
+              <template #content>
+                <div class="space-y-6">
+  
+                  <!-- Primary 3D Model Upload -->
+                  <div class="flex flex-col gap-3">
+                    <label class="text-sm font-semibold text-gray-700">
+                      Primary 3D Model <span class="text-red-500">*</span>
+                    </label>
+  
+                    <!-- Upload Area -->
+                    <div v-if="!form.modelFile && !existingModel"
+                      class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors cursor-pointer"
+                      @click="$refs.modelInput.click()" @dragover.prevent @drop.prevent="handleModelDrop">
+                      <i class="pi pi-cloud-upload text-4xl text-gray-400 mb-3 block"></i>
+                      <p class="text-sm font-medium text-gray-700 mb-1">Drop 3D model here</p>
+                      <p class="text-xs text-gray-500">or click to browse</p>
+                      <p class="text-xs text-gray-400 mt-2">Supported: GLB, GLTF (Max 100MB)</p>
+                    </div>
+                    <input ref="modelInput" type="file" accept=".glb,.gltf" class="hidden" @change="handleModelSelect" />
+  
+                    <!-- Uploaded Model Preview -->
+                    <div v-if="form.modelFile"
+                      class="bg-linear-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4">
+                      <div class="flex items-start justify-between mb-3">
+                        <div class="flex items-center gap-3">
+                          <div class="bg-blue-600 rounded-lg p-2">
+                            <i class="pi pi-cube text-white text-xl"></i>
+                          </div>
+                          <div>
+                            <p class="text-sm font-semibold text-gray-800">{{ form.modelFile.name }}</p>
+                            <p class="text-xs text-gray-600">{{ formatFileSize(form.modelFile.size) }}</p>
+                          </div>
+                        </div>
+                        <Button icon="pi pi-times" severity="danger" text rounded size="small" @click="removeModel" />
+                      </div>
+                      <div class="flex items-center gap-2 text-xs text-green-700 bg-green-50 px-3 py-2 rounded">
+                        <i class="pi pi-check-circle"></i>
+                        <span>Ready to upload</span>
+                      </div>
+                    </div>
+  
+                    <!-- Existing Model (Edit Mode) -->
+                    <div v-if="existingModel" class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                      <div class="flex items-start justify-between mb-3">
+                        <div class="flex items-center gap-3">
+                          <div class="bg-gray-600 rounded-lg p-2">
+                            <i class="pi pi-cube text-white text-xl"></i>
+                          </div>
+                          <div>
+                            <p class="text-sm font-semibold text-gray-800">{{ existingModel.file_name }}</p>
+                            <p class="text-xs text-gray-600">{{ formatFileSize(existingModel.file_size_kb * 1024) }}</p>
+                            <p class="text-xs text-gray-500 mt-1">{{ existingModel.model_format?.toUpperCase() }}</p>
+                          </div>
+                        </div>
+                        <Button icon="pi pi-trash" severity="danger" text rounded size="small"
+                          @click="deleteExistingModel" />
+                      </div>
+                      <Tag value="Uploaded" severity="success" class="w-full justify-center" />
+                    </div>
+                  </div>
+  
+                  <!-- Camera Settings -->
+                  <div class="border-t border-gray-200 pt-4">
+                    <h4 class="text-sm font-semibold text-gray-700 mb-3">Camera Settings</h4>
+                    <div class="space-y-3">
+                      <div class="flex flex-col gap-2">
+                        <label class="text-xs font-medium text-gray-600">Camera Angle X (°)</label>
+                        <InputNumber v-model="form.default_camera_angle_x" :min="-180" :max="180" suffix="°" showButtons
+                          buttonLayout="horizontal" :step="5" />
+                      </div>
+                      <div class="flex flex-col gap-2">
+                        <label class="text-xs font-medium text-gray-600">Camera Angle Y (°)</label>
+                        <InputNumber v-model="form.default_camera_angle_y" :min="-180" :max="180" suffix="°" showButtons
+                          buttonLayout="horizontal" :step="5" />
+                      </div>
+                      <div class="flex flex-col gap-2">
+                        <label class="text-xs font-medium text-gray-600">Zoom Level</label>
+                        <InputNumber v-model="form.default_zoom_level" :min="0.1" :max="10" :minFractionDigits="1"
+                          showButtons buttonLayout="horizontal" :step="0.1" />
+                      </div>
+                    </div>
+                  </div>
+  
+                  <!-- Product Images Upload -->
+                  <div class="border-t border-gray-200 pt-4">
+                    <h4 class="text-sm font-semibold text-gray-700 mb-3">Product Images</h4>
+                    <FileUpload mode="basic" name="images[]" accept="image/*" :maxFileSize="5000000" :multiple="true"
+                      :auto="false" chooseLabel="Upload Images" class="w-full" @select="handleImageSelect" />
+                    <small class="text-gray-500 text-xs block mt-2">JPG, PNG, WebP (Max 5MB each)</small>
+  
+                    <!-- Image Previews -->
+                    <div v-if="form.imageFiles && form.imageFiles.length > 0" class="grid grid-cols-2 gap-2 mt-4">
+                      <div v-for="(image, index) in form.imageFiles" :key="index" class="relative group">
+                        <img :src="getImagePreview(image)"
+                          class="w-full h-24 object-cover rounded-lg border border-gray-200" />
+                        <Badge v-if="index === 0" value="Primary" severity="success"
+                          class="absolute top-1 left-1 text-xs" />
+                        <Button icon="pi pi-times" severity="danger" rounded size="small"
+                          class="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                          @click="removeImage(index)" />
+                      </div>
+                    </div>
+                  </div>
+  
+                  <!-- Upload Instructions -->
+                  <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <div class="flex items-start gap-2">
+                      <i class="pi pi-info-circle text-blue-600 text-sm mt-0.5"></i>
+                      <div class="text-xs text-blue-800">
+                        <p class="font-semibold mb-1">Upload Tips:</p>
+                        <ul class="list-disc list-inside space-y-1">
+                          <li>Use optimized GLB format for web</li>
+                          <li>Keep models under 50MB for best performance</li>
+                          <li>First image will be the primary thumbnail</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+  
+                </div>
+              </template>
+            </Card>
           </div>
-        </template>
-      </Card>
-    </form>
-
-    <!-- Fixed Bottom Action Bar (Mobile) -->
-    <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg p-4 z-50 lg:hidden">
-      <div class="flex gap-2">
-        <Button 
-          label="Cancel" 
-          severity="secondary" 
-          outlined 
-          @click="$router.push({ name: 'merchandising.products' })"
-          class="flex-1"
-          size="small"
-        />
-        <Button 
-          label="Save Draft" 
-          severity="secondary" 
-          @click="saveDraft"
-          class="flex-1"
-          size="small"
-          :loading="submitting"
-        />
-        <Button 
-          :label="isEditMode ? 'Update' : 'Create'" 
-          icon="pi pi-check" 
-          @click="handleSubmit"
-          class="flex-1"
-          size="small"
-          :loading="submitting"
-        />
+        </div>
       </div>
-    </div>
-
-    <!-- Desktop Action Bar -->
-    <div class="hidden lg:flex justify-end gap-3 sticky bottom-0 bg-white p-4 border-t border-gray-200 shadow-lg rounded-lg">
-      <Button 
-        label="Cancel" 
-        severity="secondary" 
-        outlined 
-        @click="$router.push({ name: 'merchandising.products' })" 
-      />
-      <Button 
-        label="Save as Draft" 
-        severity="secondary" 
-        @click="saveDraft"
-        :loading="submitting"
-      />
-      <Button 
-        :label="isEditMode ? 'Update Product' : 'Create Product'" 
-        icon="pi pi-check" 
-        @click="handleSubmit"
-        :loading="submitting"
-      />
-    </div>
+  
+      <!-- Action Buttons -->
+      <div class="flex justify-end gap-3 mt-6 pt-6 border-t border-gray-200">
+        <Button label="Cancel" severity="secondary" outlined @click="router.push({ name: 'merchandising.products' })" />
+        <Button :label="isEditMode ? 'Update Product' : 'Create Product'" icon="pi pi-check" @click="handleSubmit"
+          :loading="submitting" />
+      </div>
+    </form>
   </div>
 </template>
 
@@ -379,6 +437,9 @@ import Select from 'primevue/select'
 import Checkbox from 'primevue/checkbox'
 import FileUpload from 'primevue/fileupload'
 import Skeleton from 'primevue/skeleton'
+import DatePicker from 'primevue/datepicker'
+import Tag from 'primevue/tag'
+import Badge from 'primevue/badge'
 import merchandisingService from '../../../../services/merchandising.service'
 
 const route = useRoute()
@@ -389,68 +450,112 @@ const isEditMode = computed(() => !!route.params.id)
 const submitting = ref(false)
 const loadingData = ref(false)
 const loadingCategories = ref(false)
+const existingModel = ref(null)
+const originalBasePrice = ref(0)
 
 const form = ref({
-  name: '',
+  product_name: '',
   sku: '',
   category_id: null,
-  status: 'Active',
+  subcategory_id: null,
+  brand: '',
+  collection_name: '',
+  stock_status: 'In Stock',
   description: '',
-  price: null,
-  cost_price: null,
-  stock_quantity: 0,
-  min_stock_level: 5,
-  weight: null,
-  track_inventory: true,
-  dimensions: {
-    length: null,
-    width: null,
-    height: null
-  },
-  images: [] as string[]
+  base_price: null,
+  discounted_price: null,
+  tax_rate: 12.00,
+  length_cm: null,
+  width_cm: null,
+  height_cm: null,
+  weight_kg: null,
+  assembly_required: false,
+  is_featured: false,
+  is_new_arrival: false,
+  is_bestseller: false,
+  is_active: true,
+  meta_title: '',
+  meta_description: '',
+  meta_keywords: '',
+  published_at: null,
+  price_change_reason: '',
+  // 3D Model fields
+  modelFile: null,
+  imageFiles: [],
+  default_camera_angle_x: 0,
+  default_camera_angle_y: 15,
+  default_zoom_level: 1.5
 })
 
 const errors = ref<Record<string, string>>({})
-
 const categories = ref([])
+const subcategories = computed(() => {
+  if (!form.value.category_id) return []
+  return categories.value.filter((c: any) => c.parent_category_id === form.value.category_id)
+})
 
-const statusOptions = ref([
-  { label: 'Active', value: 'Active' },
-  { label: 'Inactive', value: 'Inactive' },
-  { label: 'Draft', value: 'Draft' }
-])
+const stockStatusOptions = ['In Stock', 'Low Stock', 'Out of Stock', 'Pre-order']
 
 const loadCategories = async () => {
+  loadingCategories.value = true
   try {
-    categories.value = await merchandisingService.getCategories({ perPage: 1000 })
-    console.log('✅ Categories loaded:', categories.value.length, 'items')
+    const response = await merchandisingService.getCategories()
+    categories.value = response.data.data
   } catch (error) {
-    console.error('❌ Failed to load categories:', error)
+    console.error('Failed to load categories:', error)
     categories.value = []
+  } finally {
+    loadingCategories.value = false
   }
 }
 
 const loadProduct = async () => {
   if (!isEditMode.value) return
-  
+
   loadingData.value = true
   try {
-    const product = await merchandisingService.getProduct(Number(route.params.id))
-    
-    form.value = {
-      name: product.name,
-      sku: product.sku,
+    const response = await merchandisingService.getProduct(Number(route.params.id))
+    const product = response.data
+
+    // Properly map all fields with date conversion
+    Object.assign(form.value, {
+      product_name: product.product_name || '',
+      sku: product.sku || '',
       category_id: product.category_id,
-      status: product.status,
+      subcategory_id: product.subcategory_id,
+      brand: product.brand || '',
+      collection_name: product.collection_name || '',
+      stock_status: product.stock_status || 'In Stock',
       description: product.description || '',
-      price: product.price,
-      cost_price: product.cost_price || null,
-      stock_quantity: product.stock_quantity,
-      min_stock_level: product.min_stock_level || 5,
-      weight: product.weight || null,
-      track_inventory: true,
-      dimensions: product.dimensions || { length: null, width: null, height: null },
-      images: product.images || []
+      base_price: product.base_price,
+      discounted_price: product.discounted_price,
+      tax_rate: product.tax_rate || 12.00,
+      length_cm: product.length_cm,
+      width_cm: product.width_cm,
+      height_cm: product.height_cm,
+      weight_kg: product.weight_kg,
+      assembly_required: product.assembly_required || false,
+      is_featured: product.is_featured || false,
+      is_new_arrival: product.is_new_arrival || false,
+      is_bestseller: product.is_bestseller || false,
+      is_active: product.is_active ?? true,
+      meta_title: product.meta_title || '',
+      meta_description: product.meta_description || '',
+      meta_keywords: product.meta_keywords || '',
+      // ✅ Convert string date to Date object for DatePicker
+      published_at: product.published_at ? new Date(product.published_at) : null,
+      price_change_reason: '',
+      // Keep existing 3D settings
+      default_camera_angle_x: form.value.default_camera_angle_x,
+      default_camera_angle_y: form.value.default_camera_angle_y,
+      default_zoom_level: form.value.default_zoom_level
+    })
+
+    originalBasePrice.value = product.base_price
+
+    // Load 3D models
+    if (product.id) {
+      await loadProductAssets(product.id)
     }
   } catch (error: any) {
     toast.add({
@@ -465,15 +570,187 @@ const loadProduct = async () => {
   }
 }
 
+const loadProductAssets = async (productId: number) => {
+  try {
+    const response = await merchandisingService.getAssetsByProduct(productId)
+    const models = response.data.assets_by_type?.['3D_Model'] || []
+    if (models.length > 0) {
+      existingModel.value = models.find((m: any) => m.is_primary) || models[0]
+      if (existingModel.value) {
+        form.value.default_camera_angle_x = existingModel.value.default_camera_angle_x || 0
+        form.value.default_camera_angle_y = existingModel.value.default_camera_angle_y || 15
+        form.value.default_zoom_level = existingModel.value.default_zoom_level || 1.5
+      }
+    }
+  } catch (error) {
+    console.error('Failed to load product assets:', error)
+  }
+}
+
+const onCategoryChange = () => {
+  form.value.subcategory_id = null
+  generateSKU()
+}
+
+// SKU Generation Logic
+const generateSKU = async () => {
+  if (!form.value.product_name || !form.value.category_id) return
+
+  const category = categories.value.find((c: any) => c.id === form.value.category_id)
+  if (!category) return
+
+  // Get category code
+  const categoryCode = category.category_code || 'GEN'
+
+  // Get brand initial or use first letter of product name
+  const brandCode = form.value.brand
+    ? form.value.brand.substring(0, 3).toUpperCase()
+    : form.value.product_name.substring(0, 3).toUpperCase()
+
+  // Generate base SKU
+  const baseSKU = `${categoryCode}-${brandCode}`
+
+  // Check for uniqueness and get next sequence
+  try {
+    const response = await merchandisingService.getProducts({ search: baseSKU })
+    const existingProducts = response.data.data || []
+
+    // Find highest sequence number
+    let maxSequence = 0
+    existingProducts.forEach((p: any) => {
+      const match = p.sku?.match(new RegExp(`${baseSKU}-(\\d+)`))
+      if (match) {
+        const seq = parseInt(match[1])
+        if (seq > maxSequence) maxSequence = seq
+      }
+    })
+
+    // Generate new sequence
+    const nextSequence = (maxSequence + 1).toString().padStart(3, '0')
+    form.value.sku = `${baseSKU}-${nextSequence}`
+  } catch (error) {
+    // Fallback to random sequence if API fails
+    const randomSeq = Math.floor(Math.random() * 1000).toString().padStart(3, '0')
+    form.value.sku = `${baseSKU}-${randomSeq}`
+  }
+}
+
+const copySKU = () => {
+  if (!form.value.sku) return
+  navigator.clipboard.writeText(form.value.sku)
+  toast.add({
+    severity: 'success',
+    summary: 'Copied!',
+    detail: 'SKU copied to clipboard',
+    life: 2000
+  })
+}
+
+const handleModelSelect = (event: any) => {
+  const file = event.target.files[0]
+  if (!file) return
+
+  if (file.size > 100000000) {
+    toast.add({
+      severity: 'error',
+      summary: 'File too large',
+      detail: 'Model file must be less than 100MB',
+      life: 3000
+    })
+    return
+  }
+
+  form.value.modelFile = file
+}
+
+const handleModelDrop = (event: DragEvent) => {
+  const file = event.dataTransfer?.files[0]
+  if (!file) return
+
+  if (!file.name.endsWith('.glb') && !file.name.endsWith('.gltf')) {
+    toast.add({
+      severity: 'error',
+      summary: 'Invalid file',
+      detail: 'Only GLB and GLTF files are supported',
+      life: 3000
+    })
+    return
+  }
+
+  form.value.modelFile = file
+}
+
+const removeModel = () => {
+  form.value.modelFile = null
+  if ($refs.modelInput) {
+    $refs.modelInput.value = null
+  }
+}
+
+const deleteExistingModel = async () => {
+  if (!existingModel.value?.id) return
+
+  try {
+    await merchandisingService.deleteAsset(existingModel.value.id)
+    existingModel.value = null
+    toast.add({
+      severity: 'success',
+      summary: 'Success',
+      detail: '3D model deleted',
+      life: 3000
+    })
+  } catch (error) {
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'Failed to delete model',
+      life: 3000
+    })
+  }
+}
+
+const handleImageSelect = (event: any) => {
+  form.value.imageFiles = Array.from(event.files)
+}
+
+const getImagePreview = (file: File) => {
+  return URL.createObjectURL(file)
+}
+
+const removeImage = (index: number) => {
+  form.value.imageFiles.splice(index, 1)
+}
+
+const formatFileSize = (bytes: number) => {
+  if (bytes === 0) return '0 Bytes'
+  const k = 1024
+  const sizes = ['Bytes', 'KB', 'MB', 'GB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i]
+}
+
 const validateForm = () => {
   errors.value = {}
-  
-  if (!form.value.name) errors.value.name = 'Product name is required'
+
+  if (!form.value.product_name) errors.value.product_name = 'Product name is required'
   if (!form.value.sku) errors.value.sku = 'SKU is required'
   if (!form.value.category_id) errors.value.category_id = 'Category is required'
-  if (!form.value.price) errors.value.price = 'Price is required'
-  if (form.value.stock_quantity === null) errors.value.stock_quantity = 'Stock quantity is required'
-  
+  if (!form.value.base_price || form.value.base_price <= 0) errors.value.base_price = 'Base price must be greater than 0'
+
+  if (isEditMode.value && originalBasePrice.value !== form.value.base_price && !form.value.price_change_reason) {
+    errors.value.price_change_reason = 'Price change reason is required'
+  }
+
+  if (!isEditMode.value && !form.value.modelFile && !existingModel.value) {
+    toast.add({
+      severity: 'warn',
+      summary: 'Missing 3D Model',
+      detail: 'Please upload a primary 3D model',
+      life: 3000
+    })
+    return false
+  }
+
   return Object.keys(errors.value).length === 0
 }
 
@@ -491,8 +768,44 @@ const handleSubmit = async () => {
   submitting.value = true
   
   try {
+    let productId: number
+
+    // ✅ Prepare data for submission - convert Date back to ISO string
+    const submitData = {
+      product_name: form.value.product_name,
+      sku: form.value.sku,
+      category_id: form.value.category_id,
+      subcategory_id: form.value.subcategory_id,
+      brand: form.value.brand,
+      collection_name: form.value.collection_name,
+      stock_status: form.value.stock_status,
+      description: form.value.description,
+      base_price: form.value.base_price,
+      discounted_price: form.value.discounted_price,
+      tax_rate: form.value.tax_rate,
+      length_cm: form.value.length_cm,
+      width_cm: form.value.width_cm,
+      height_cm: form.value.height_cm,
+      weight_kg: form.value.weight_kg,
+      assembly_required: form.value.assembly_required,
+      is_featured: form.value.is_featured,
+      is_new_arrival: form.value.is_new_arrival,
+      is_bestseller: form.value.is_bestseller,
+      is_active: form.value.is_active,
+      meta_title: form.value.meta_title,
+      meta_description: form.value.meta_description,
+      meta_keywords: form.value.meta_keywords,
+      // ✅ Convert Date object to ISO string
+      published_at: form.value.published_at instanceof Date 
+        ? form.value.published_at.toISOString() 
+        : form.value.published_at,
+      price_change_reason: form.value.price_change_reason
+    }
+
+    // Create or update product
     if (isEditMode.value) {
-      await merchandisingService.updateProduct(Number(route.params.id), form.value)
+      await merchandisingService.updateProduct(Number(route.params.id), submitData)
+      productId = Number(route.params.id)
       toast.add({
         severity: 'success',
         summary: 'Success',
@@ -500,13 +813,24 @@ const handleSubmit = async () => {
         life: 3000
       })
     } else {
-      await merchandisingService.createProduct(form.value)
+      const response = await merchandisingService.createProduct(submitData)
+      productId = response.data.id
       toast.add({
         severity: 'success',
         summary: 'Success',
         detail: 'Product created successfully',
         life: 3000
       })
+    }
+
+    // Upload 3D model if present
+    if (form.value.modelFile) {
+      await upload3DModel(productId)
+    }
+
+    // Upload images if present
+    if (form.value.imageFiles && form.value.imageFiles.length > 0) {
+      await uploadImages(productId)
     }
     
     router.push({ name: 'merchandising.products' })
@@ -528,25 +852,67 @@ const handleSubmit = async () => {
   }
 }
 
-const saveDraft = () => {
-  form.value.status = 'Draft'
-  handleSubmit()
+const upload3DModel = async (productId: number) => {
+  if (!form.value.modelFile) return
+
+  try {
+    const formData = new FormData()
+    formData.append('product_id', productId.toString())
+    formData.append('asset_type', '3D_Model')
+    formData.append('asset_file', form.value.modelFile)
+    formData.append('is_primary', 'true')
+    formData.append('model_format', form.value.modelFile.name.split('.').pop()?.toLowerCase() || 'glb')
+    formData.append('default_camera_angle_x', form.value.default_camera_angle_x.toString())
+    formData.append('default_camera_angle_y', form.value.default_camera_angle_y.toString())
+    formData.append('default_zoom_level', form.value.default_zoom_level.toString())
+
+    await merchandisingService.uploadAsset(formData)
+
+    toast.add({
+      severity: 'success',
+      summary: 'Success',
+      detail: '3D model uploaded successfully',
+      life: 3000
+    })
+  } catch (error) {
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'Failed to upload 3D model',
+      life: 3000
+    })
+  }
 }
 
-const uploadImages = async (event: any) => {
-  // Handle image upload - implement based on your backend
-  const files = event.files
-  // Upload logic here
-  toast.add({
-    severity: 'info',
-    summary: 'Upload',
-    detail: `${files.length} image(s) uploaded`,
-    life: 3000
-  })
-}
+const uploadImages = async (productId: number) => {
+  if (!form.value.imageFiles || form.value.imageFiles.length === 0) return
 
-const removeImage = (index: number) => {
-  form.value.images.splice(index, 1)
+  try {
+    for (let i = 0; i < form.value.imageFiles.length; i++) {
+      const formData = new FormData()
+      formData.append('product_id', productId.toString())
+      formData.append('asset_type', i === 0 ? 'Image_Main' : 'Image_Gallery')
+      formData.append('asset_file', form.value.imageFiles[i])
+      formData.append('is_primary', i === 0 ? 'true' : 'false')
+      formData.append('display_order', i.toString())
+
+      await merchandisingService.uploadAsset(formData)
+    }
+
+    toast.add({
+      severity: 'success',
+      summary: 'Success',
+      detail: 'Product images uploaded successfully',
+      life: 3000
+    })
+  } catch (error) {
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'Failed to upload some images',
+      life: 3000
+    })
+  }
 }
 
 onMounted(() => {
@@ -556,14 +922,17 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* Mobile-specific styles */
-@media (max-width: 640px) {
-  :deep(.p-inputnumber-input) {
-    font-size: 0.875rem;
-  }
-  
-  :deep(.p-dropdown) {
-    font-size: 0.875rem;
-  }
+:deep(.p-card-title) {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+:deep(.p-card-content) {
+  padding-top: 1rem;
+}
+
+.sticky {
+  position: sticky;
+  top: 1.5rem;
 }
 </style>

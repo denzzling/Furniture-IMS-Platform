@@ -35,7 +35,7 @@ class OvertimeRequest extends Model
         'approved_at' => 'datetime',
         'rate_multiplier' => 'decimal:2'
     ];
-a
+
     // Relationships
     public function employee()
     {

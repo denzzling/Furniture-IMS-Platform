@@ -41,6 +41,12 @@ import Textarea from 'primevue/textarea'
 import ScrollTop from 'primevue/scrolltop'
 import Skeleton from 'primevue/skeleton'
 import Paginator from 'primevue/paginator'
+import FileUpload from 'primevue/fileupload'
+import Tree from 'primevue/tree'
+
+
+
+
 
 // ==================== AXIOS CONFIGURATION ====================
 axios.defaults.baseURL = 'http://localhost:8000'
@@ -115,6 +121,8 @@ app.use(router)
 
 // Register PrimeVue components
 const components = {
+  Tree,
+  FileUpload,
   Paginator,
   Skeleton,
   ScrollTop,
