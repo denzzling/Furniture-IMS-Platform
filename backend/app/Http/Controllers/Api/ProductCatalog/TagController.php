@@ -450,4 +450,69 @@ class TagController extends BaseController
             );
         }
     }
+
+    /**
+     * Bulk delete tags.
+     */
+    public function bulkDelete(Request $request)
+    {
+        try {
+            $validated = $this->validateRequest($request, [
+                'tag_ids' => 'required|array',
+                'tag_ids.*' => 'required|integer'
+            ]);
+
+            DB::beginTransaction();
+
+            try {
+                $tags = Tag::byStore($this->getStoreId())
+                          ->whereIn('id', $validated['tag_ids'])
+                          ->get();
+
+                if ($tags->count() !== count($validated['tag_ids'])) {
+                    DB::rollBack();
+                    return $this->errorResponse('One or more tags not found or do not belong to this store', 422);
+                }
+
+                $deleted = 0;
+                foreach ($tags as $tag) {
+                    $tag->products()->detach();
+                    $tag->delete();
+                    $deleted++;
+                }
+
+                DB::commit();
+
+                return $this->successResponse(
+                    ['deleted_count' => $deleted],
+                    'Tags deleted successfully'
+                );
+
+            } catch (\Exception $e) {
+                DB::rollBack();
+                throw $e;
+            }
+
+        } catch (ValidationException $e) {
+            return $this->errorResponse(
+                'Validation error',
+                422,
+                $e->errors()
+            );
+        } catch (\Exception $e) {
+            Log::error('Failed to bulk delete tags', [
+                'store_id' => $this->getStoreId(),
+                'user_id' => $this->getUserId(),
+                'data' => $request->all(),
+                'error' => $e->getMessage()
+            ]);
+            
+            return $this->errorResponse(
+                'Failed to delete tags: ' . $e->getMessage(),
+                500,
+                [],
+                $e
+            );
+        }
+    }
 }

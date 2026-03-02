@@ -14,6 +14,105 @@ use Illuminate\Validation\ValidationException;
 class ProductAssetController extends BaseController
 {
     /**
+     * Display a listing of all assets (for admin asset management).
+     */
+    public function index(Request $request)
+    {
+        try {
+            $query = ProductAsset::byStore($this->getStoreId())
+                                ->with('product:id,product_name,sku');
+
+            // Filter by asset type
+            if ($request->has('asset_type')) {
+                $query->where('asset_type', $request->asset_type);
+            }
+
+            // Filter by product
+            if ($request->has('product_id')) {
+                $query->where('product_id', $request->product_id);
+            }
+
+            // Filter by primary status
+            if ($request->has('is_primary')) {
+                $query->where('is_primary', $request->boolean('is_primary'));
+            }
+
+            // Search
+            if ($request->has('search')) {
+                $query->where(function($q) use ($request) {
+                    $q->where('file_name', 'like', '%' . $request->search . '%')
+                      ->orWhere('alt_text', 'like', '%' . $request->search . '%')
+                      ->orWhereHas('product', function($q2) use ($request) {
+                          $q2->where('product_name', 'like', '%' . $request->search . '%')
+                             ->orWhere('sku', 'like', '%' . $request->search . '%');
+                      });
+                });
+            }
+
+            // Sorting
+            $sortField = $request->get('sort_by', 'created_at');
+            $sortOrder = $request->get('sort_order', 'desc');
+            
+            $allowedSorts = ['file_name', 'asset_type', 'created_at', 'file_size_kb'];
+            if (in_array($sortField, $allowedSorts)) {
+                $query->orderBy($sortField, $sortOrder);
+            }
+
+            $assets = $query->paginate($request->get('per_page', 15));
+
+            return $this->successResponse($assets, 'Assets retrieved successfully');
+
+        } catch (\Exception $e) {
+            Log::error('Failed to retrieve assets', [
+                'store_id' => $this->getStoreId(),
+                'error' => $e->getMessage()
+            ]);
+            
+            return $this->errorResponse(
+                'Failed to retrieve assets',
+                500,
+                [],
+                $e
+            );
+        }
+    }
+
+    /**
+     * Display the specified asset.
+     */
+    public function show($id)
+    {
+        try {
+            $asset = ProductAsset::byStore($this->getStoreId())
+                                ->with('product:id,product_name,sku,category_id')
+                                ->findOrFail($id);
+
+            // Add file URL to response
+            $assetData = $asset->toArray();
+            $assetData['url'] = $asset->url;
+            $assetData['thumbnail_url'] = $asset->thumbnail_url;
+
+            return $this->successResponse($assetData, 'Asset retrieved successfully');
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return $this->errorResponse('Asset not found', 404);
+        } catch (\Exception $e) {
+            Log::error('Failed to retrieve asset', [
+                'store_id' => $this->getStoreId(),
+                'asset_id' => $id,
+                'error' => $e->getMessage()
+            ]);
+            
+            return $this->errorResponse(
+                'Failed to retrieve asset',
+                500,
+                [],
+                $e
+            );
+        }
+    }
+
+    /**
      * Store a newly uploaded asset.
      */
     public function store(Request $request)
