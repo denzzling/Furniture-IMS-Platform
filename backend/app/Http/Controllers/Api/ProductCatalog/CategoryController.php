@@ -388,4 +388,76 @@ class CategoryController extends BaseController
             );
         }
     }
+
+    /**
+     * Bulk delete categories.
+     */
+    public function bulkDelete(Request $request)
+    {
+        try {
+            $validated = $this->validateRequest($request, [
+                'category_ids' => 'required|array',
+                'category_ids.*' => 'required|integer'
+            ]);
+
+            DB::beginTransaction();
+
+            try {
+                $categories = Category::byStore($this->getStoreId())
+                                     ->whereIn('id', $validated['category_ids'])
+                                     ->get();
+
+                if ($categories->count() !== count($validated['category_ids'])) {
+                    DB::rollBack();
+                    return $this->errorResponse('One or more categories not found or do not belong to this store', 422);
+                }
+
+                // Check if any has products
+                foreach ($categories as $category) {
+                    if ($category->products()->count() > 0) {
+                        DB::rollBack();
+                        return $this->errorResponse("Category '{$category->category_name}' has products and cannot be deleted", 422);
+                    }
+                }
+
+                $deleted = 0;
+                foreach ($categories as $category) {
+                    $category->delete();
+                    $deleted++;
+                }
+
+                DB::commit();
+
+                return $this->successResponse(
+                    ['deleted_count' => $deleted],
+                    'Categories deleted successfully'
+                );
+
+            } catch (\Exception $e) {
+                DB::rollBack();
+                throw $e;
+            }
+
+        } catch (ValidationException $e) {
+            return $this->errorResponse(
+                'Validation error',
+                422,
+                $e->errors()
+            );
+        } catch (\Exception $e) {
+            Log::error('Failed to bulk delete categories', [
+                'store_id' => $this->getStoreId(),
+                'user_id' => $this->getUserId(),
+                'data' => $request->all(),
+                'error' => $e->getMessage()
+            ]);
+            
+            return $this->errorResponse(
+                'Failed to delete categories: ' . $e->getMessage(),
+                500,
+                [],
+                $e
+            );
+        }
+    }
 }
