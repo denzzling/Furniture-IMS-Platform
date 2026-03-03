@@ -19,7 +19,8 @@ class NavigationItem extends Model
         'parent_id',
         'display_order',
         'is_active',
-        'meta'
+        'meta',
+        'section',
     ];
 
     protected $casts = [

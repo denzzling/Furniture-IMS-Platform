@@ -6,13 +6,14 @@ namespace App\Models\ProductCatalog;
 use App\Models\Store\Store;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Storage;
 
 class ProductAsset extends Model
 {
     use SoftDeletes;
 
     protected $table = 'product_assets';
-    
+
     protected $fillable = [
         'store_id',
         'product_id',
@@ -41,6 +42,61 @@ class ProductAsset extends Model
         'default_camera_angle_y' => 'float',
         'default_zoom_level' => 'float'
     ];
+
+
+    protected $appends = ['url', 'thumbnail_url', 'camera_settings'];
+
+    /**
+     * ✅ FIXED: Safer URL generation
+     */
+    public function getUrlAttribute()
+    {
+        if (!$this->file_path) {
+            return null;
+        }
+
+        // Remove any existing 'storage/' prefix to avoid duplication
+        $cleanPath = ltrim($this->file_path, '/');
+        $cleanPath = preg_replace('#^storage/#', '', $cleanPath);
+
+        // Build the URL
+        return asset("storage/{$cleanPath}");
+    }
+
+    /**
+     * Get thumbnail URL (for images/videos)
+     */
+    public function getThumbnailUrlAttribute()
+    {
+        if (in_array($this->asset_type, ['Image_Main', 'Image_Gallery', 'Image_360'])) {
+            return $this->url;
+        }
+        return null;
+    }
+
+    /**
+     * Get camera settings (for 3D models)
+     */
+    public function getCameraSettingsAttribute()
+    {
+        if ($this->asset_type === '3D_Model') {
+            return [
+                'angle_x' => $this->default_camera_angle_x ?? 0,
+                'angle_y' => $this->default_camera_angle_y ?? 15,
+                'zoom' => $this->default_zoom_level ?? 1.5
+            ];
+        }
+        return null;
+    }
+
+    /**
+     * Get file exists status
+     */
+    public function getFileExistsAttribute()
+    {
+        return Storage::disk('public')->exists($this->file_path);
+    }
+
 
     // Relationships
     public function store()
@@ -82,37 +138,5 @@ class ProductAsset extends Model
     public function scopeArCompatible($query)
     {
         return $query->where('is_ar_compatible', true);
-    }
-
-    // Accessors
-    public function getUrlAttribute()
-    {
-        return asset('storage/' . $this->file_path);
-    }
-
-    public function getThumbnailUrlAttribute()
-    {
-        if ($this->asset_type === '3D_Model') {
-            // Try to find associated thumbnail
-            $thumbnail = $this->product->assets()
-                              ->where('asset_type', '3D_Thumbnail')
-                              ->first();
-            return $thumbnail ? $thumbnail->url : null;
-        }
-        
-        return $this->url;
-    }
-
-    public function getCameraSettingsAttribute()
-    {
-        if ($this->default_camera_angle_x !== null) {
-            return [
-                'angle_x' => $this->default_camera_angle_x,
-                'angle_y' => $this->default_camera_angle_y,
-                'zoom' => $this->default_zoom_level
-            ];
-        }
-        
-        return null;
     }
 }

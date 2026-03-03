@@ -282,17 +282,32 @@
             </template>
             <template #content>
               <div class="space-y-4">
-                <!-- 3D Viewer Container -->
+                <!-- ✅ 3D Viewer Container -->
                 <div 
                   v-if="primary3DModel"
-                  class="relative bg-linear-to-br from-gray-100 to-gray-200 rounded-lg overflow-hidden"
+                  ref="viewer3DContainer"
+                  class="relative bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg overflow-hidden"
                   style="height: 400px;"
                 >
-                  <!-- Canvas for 3D rendering -->
-                  <canvas ref="canvas3D" class="w-full h-full"></canvas>
+                  <!-- Loading Indicator -->
+                  <div v-if="loading3D" class="absolute inset-0 flex items-center justify-center bg-white/90 z-10">
+                    <div class="text-center">
+                      <ProgressSpinner style="width: 50px; height: 50px" strokeWidth="4" />
+                      <p class="text-sm text-gray-600 mt-2">Loading 3D Model...</p>
+                    </div>
+                  </div>
+
+                  <!-- Error Message -->
+                  <div v-if="model3DError" class="absolute inset-0 flex items-center justify-center bg-red-50 z-10">
+                    <div class="text-center p-4">
+                      <i class="pi pi-exclamation-triangle text-4xl text-red-500 mb-2"></i>
+                      <p class="text-sm text-red-700">Failed to load 3D model</p>
+                      <Button label="Retry" size="small" class="mt-2" @click="retryLoad3D" />
+                    </div>
+                  </div>
                   
                   <!-- Controls Overlay -->
-                  <div class="absolute bottom-4 left-4 right-4 bg-white/90 backdrop-blur rounded-lg p-3 shadow-lg">
+                  <div v-if="!loading3D && !model3DError" class="absolute bottom-4 left-4 right-4 bg-white/95 backdrop-blur rounded-lg p-3 shadow-lg z-20">
                     <div class="flex items-center justify-between gap-2">
                       <Button 
                         icon="pi pi-replay" 
@@ -329,11 +344,6 @@
                       />
                     </div>
                   </div>
-
-                  <!-- Loading Indicator -->
-                  <div v-if="loading3D" class="absolute inset-0 flex items-center justify-center bg-white/80">
-                    <ProgressSpinner style="width: 50px; height: 50px" />
-                  </div>
                 </div>
 
                 <!-- No 3D Model -->
@@ -341,6 +351,13 @@
                   <i class="pi pi-cube text-6xl text-gray-400 mb-4"></i>
                   <p class="text-gray-600 font-medium">No 3D Model Available</p>
                   <p class="text-sm text-gray-500 mt-2">Upload a 3D model to preview</p>
+                  <Button 
+                    label="Upload 3D Model" 
+                    icon="pi pi-upload" 
+                    size="small"
+                    class="mt-4"
+                    @click="router.push({ name: 'merchandising.assets.upload' })"
+                  />
                 </div>
 
                 <!-- Model Info -->
@@ -357,6 +374,12 @@
                     <div class="flex justify-between">
                       <span>Uploaded:</span>
                       <span class="font-medium">{{ formatDate(primary3DModel.created_at) }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                      <span>AR Compatible:</span>
+                      <Tag :value="primary3DModel.is_ar_compatible ? 'Yes' : 'No'" 
+                           :severity="primary3DModel.is_ar_compatible ? 'success' : 'secondary'" 
+                           size="small" />
                     </div>
                   </div>
                 </div>
@@ -380,6 +403,7 @@
                     :src="selectedImage || productImages[0]?.url" 
                     :alt="product.product_name"
                     class="w-full h-full object-cover"
+                    @error="handleImageError"
                   />
                   <Button 
                     icon="pi pi-search-plus" 
@@ -399,9 +423,10 @@
                     @click="selectedImage = image.url"
                   >
                     <img 
-                      :src="image.thumbnail || image.url" 
+                      :src="image.thumbnail_url || image.url" 
                       :alt="`Thumbnail ${index + 1}`"
                       class="w-full h-20 object-cover"
+                      @error="handleImageError"
                     />
                     <Badge v-if="image.is_primary" value="Main" severity="success" class="absolute top-1 left-1 text-xs" />
                   </div>
@@ -412,6 +437,13 @@
               <div v-else class="text-center py-8">
                 <i class="pi pi-image text-4xl text-gray-400 mb-3 block"></i>
                 <p class="text-gray-600">No product images</p>
+                <Button 
+                  label="Upload Images" 
+                  icon="pi pi-upload" 
+                  size="small"
+                  class="mt-3"
+                  @click="router.push({ name: 'merchandising.assets.upload' })"
+                />
               </div>
             </template>
           </Card>
@@ -421,11 +453,11 @@
             <template #title>
               <div class="flex items-center gap-2">
                 <i class="pi pi-folder text-yellow-600"></i>
-                <span>All Assets</span>
+                <span>All Assets ({{ allAssets.length }})</span>
               </div>
             </template>
             <template #content>
-              <div class="space-y-2">
+              <div class="space-y-2 max-h-96 overflow-y-auto">
                 <div v-if="!allAssets || allAssets.length === 0" class="text-center py-4 text-gray-500 text-sm">
                   No assets uploaded
                 </div>
@@ -435,20 +467,21 @@
                   :key="asset.id"
                   class="flex items-center justify-between p-2 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
                 >
-                  <div class="flex items-center gap-2">
-                    <i :class="getAssetIcon(asset.asset_type)" class="text-gray-600"></i>
-                    <div>
-                      <p class="text-sm font-medium text-gray-900">{{ asset.file_name }}</p>
-                      <p class="text-xs text-gray-500">{{ asset.asset_type.replace('_', ' ') }}</p>
+                  <div class="flex items-center gap-2 flex-1 min-w-0">
+                    <i :class="getAssetIcon(asset.asset_type)" class="text-gray-600 flex-shrink-0"></i>
+                    <div class="min-w-0 flex-1">
+                      <p class="text-sm font-medium text-gray-900 truncate">{{ asset.file_name }}</p>
+                      <p class="text-xs text-gray-500">{{ getAssetTypeLabel(asset.asset_type) }} • {{ formatFileSize(asset.file_size_kb * 1024) }}</p>
                     </div>
                   </div>
-                  <div class="flex items-center gap-1">
+                  <div class="flex items-center gap-1 flex-shrink-0">
                     <Tag v-if="asset.is_primary" value="Primary" severity="success" size="small" />
                     <Button 
                       icon="pi pi-download" 
                       text 
                       rounded 
                       size="small"
+                      v-tooltip.top="'Download'"
                       @click="downloadAsset(asset)"
                     />
                   </div>
@@ -508,6 +541,7 @@
             :alt="`Image ${index + 1}`"
             class="w-full h-48 object-cover cursor-pointer hover:opacity-90 transition-opacity"
             @click="selectedImage = image.url; galleryVisible = false"
+            @error="handleImageError"
           />
           <Badge v-if="image.is_primary" value="Primary" severity="success" class="absolute top-2 left-2" />
         </div>
@@ -518,13 +552,26 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, onBeforeUnmount } from 'vue'
+import { ref, onMounted, computed, onBeforeUnmount, nextTick, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useToast } from 'primevue/usetoast'
 import * as THREE from 'three'
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
+
+
+import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import merchandisingService from '../../../../services/merchandising.service'
+
+import Card from 'primevue/card'
+import Button from 'primevue/button'
+import Tag from 'primevue/tag'
+import Badge from 'primevue/badge'
+import DataTable from 'primevue/datatable'
+import Column from 'primevue/column'
+import Dialog from 'primevue/dialog'
+import Skeleton from 'primevue/skeleton'
+import ProgressSpinner from 'primevue/progressspinner'
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
 
 const route = useRoute()
 const router = useRouter()
@@ -533,6 +580,7 @@ const toast = useToast()
 const productId = computed(() => Number(route.params.id))
 const loading = ref(false)
 const loading3D = ref(false)
+const model3DError = ref(false)
 const deleting = ref(false)
 const deleteDialogVisible = ref(false)
 const galleryVisible = ref(false)
@@ -545,14 +593,14 @@ const primary3DModel = ref(null)
 const productImages = ref([])
 const selectedImage = ref(null)
 
-// 3D Viewer
-const canvas3D = ref(null)
-let scene: THREE.Scene
-let camera: THREE.PerspectiveCamera
-let renderer: THREE.WebGLRenderer
-let controls: OrbitControls
-let model: THREE.Object3D
-let animationId: number
+// 3D Viewer refs
+const viewer3DContainer = ref<HTMLElement | null>(null)
+let scene: THREE.Scene | null = null
+let camera: THREE.PerspectiveCamera | null = null
+let renderer: THREE.WebGLRenderer | null = null
+let controls: OrbitControls | null = null
+let model: THREE.Object3D | null = null
+let animationId: number | null = null
 
 const loadProduct = async () => {
   loading.value = true
@@ -560,12 +608,14 @@ const loadProduct = async () => {
     const response = await merchandisingService.getProduct(productId.value)
     product.value = response.data
 
-    // Load variations
     if (response.data.id) {
-      loadVariations()
-      loadAssets()
+      await Promise.all([
+        loadVariations(),
+        loadAssets()
+      ])
     }
   } catch (error: any) {
+    console.error('Failed to load product:', error)
     toast.add({
       severity: 'error',
       summary: 'Error',
@@ -580,7 +630,7 @@ const loadProduct = async () => {
 const loadVariations = async () => {
   try {
     const response = await merchandisingService.getVariationsByProduct(productId.value)
-    variations.value = response.data.variations || []
+    variations.value = response.data.variations || response.data.data || []
   } catch (error) {
     console.error('Failed to load variations:', error)
   }
@@ -593,7 +643,7 @@ const loadAssets = async () => {
     
     // Extract 3D models
     const models = response.data.assets_by_type?.['3D_Model'] || []
-    primary3DModel.value = models.find((m: any) => m.is_primary) || models[0]
+    primary3DModel.value = models.find((m: any) => m.is_primary) || models[0] || null
     
     // Extract images
     const mainImages = response.data.assets_by_type?.['Image_Main'] || []
@@ -601,8 +651,10 @@ const loadAssets = async () => {
     productImages.value = [...mainImages, ...galleryImages]
     
     // Initialize 3D viewer if model exists
-    if (primary3DModel.value) {
-      setTimeout(() => init3DViewer(), 100)
+    if (primary3DModel.value && viewer3DContainer.value) {
+      nextTick(() => {
+        init3DViewer()
+      })
     }
   } catch (error) {
     console.error('Failed to load assets:', error)
@@ -610,89 +662,125 @@ const loadAssets = async () => {
 }
 
 const init3DViewer = () => {
-  if (!canvas3D.value || !primary3DModel.value) return
+  if (!viewer3DContainer.value || !primary3DModel.value) {
+    console.warn('Cannot init 3D viewer: missing container or model')
+    return
+  }
 
   loading3D.value = true
+  model3DError.value = false
 
-  // Scene setup
-  scene = new THREE.Scene()
-  scene.background = new THREE.Color(0xf0f0f0)
+  try {
+    // Cleanup existing scene
+    cleanup3DScene()
 
-  // Camera
-  camera = new THREE.PerspectiveCamera(
-    75,
-    canvas3D.value.clientWidth / canvas3D.value.clientHeight,
-    0.1,
-    1000
-  )
-  camera.position.set(2, 2, 2)
+    const container = viewer3DContainer.value
+    const width = container.clientWidth
+    const height = container.clientHeight
 
-  // Renderer
-  renderer = new THREE.WebGLRenderer({ 
-    canvas: canvas3D.value, 
-    antialias: true,
-    alpha: true 
-  })
-  renderer.setSize(canvas3D.value.clientWidth, canvas3D.value.clientHeight)
-  renderer.setPixelRatio(window.devicePixelRatio)
+    // Scene setup
+    scene = new THREE.Scene()
+    scene.background = new THREE.Color(0xf5f5f5)
 
-  // Lights
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.6)
-  scene.add(ambientLight)
+    // Camera
+    camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 1000)
+    camera.position.set(
+      primary3DModel.value.camera_settings?.angle_x || 2,
+      primary3DModel.value.camera_settings?.angle_y || 2,
+      primary3DModel.value.camera_settings?.zoom || 5
+    )
 
-  const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8)
-  directionalLight.position.set(5, 5, 5)
-  scene.add(directionalLight)
+    // Renderer
+    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
+    renderer.setSize(width, height)
+    renderer.setPixelRatio(window.devicePixelRatio)
+    renderer.shadowMap.enabled = true
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap
+    container.appendChild(renderer.domElement)
 
-  // Controls
-  controls = new OrbitControls(camera, renderer.domElement)
-  controls.enableDamping = true
-  controls.dampingFactor = 0.05
+    // Lights
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6)
+    scene.add(ambientLight)
 
-  // Apply saved camera angles if available
-  if (primary3DModel.value.default_camera_angle_x) {
-    camera.position.x = Math.cos(primary3DModel.value.default_camera_angle_x * Math.PI / 180) * 3
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8)
+    directionalLight.position.set(5, 10, 7.5)
+    directionalLight.castShadow = true
+    scene.add(directionalLight)
+
+    const fillLight = new THREE.DirectionalLight(0xffffff, 0.3)
+    fillLight.position.set(-5, 0, -5)
+    scene.add(fillLight)
+
+    // Controls
+    controls = new OrbitControls(camera, renderer.domElement)
+    controls.enableDamping = true
+    controls.dampingFactor = 0.05
+    controls.minDistance = 1
+    controls.maxDistance = 20
+    controls.maxPolarAngle = Math.PI / 2
+
+    // Load 3D model
+    const modelFormat = primary3DModel.value.model_format?.toLowerCase()
+    const loader = modelFormat === 'obj' ? new OBJLoader() : new GLTFLoader()
+    
+    console.log('Loading 3D model:', primary3DModel.value.url, 'Format:', modelFormat)
+
+    loader.load(
+      primary3DModel.value.url,
+      (loadedModel: any) => {
+        model = modelFormat === 'obj' ? loadedModel : loadedModel.scene
+        
+        // Center and scale model
+        const box = new THREE.Box3().setFromObject(model)
+        const center = box.getCenter(new THREE.Vector3())
+        const size = box.getSize(new THREE.Vector3())
+        const maxDim = Math.max(size.x, size.y, size.z)
+        const scale = 3 / maxDim
+        
+        model.scale.multiplyScalar(scale)
+        model.position.sub(center.multiplyScalar(scale))
+        
+        // Enable shadows
+        model.traverse((child: any) => {
+          if (child.isMesh) {
+            child.castShadow = true
+            child.receiveShadow = true
+          }
+        })
+        
+        scene?.add(model)
+        loading3D.value = false
+        console.log('3D model loaded successfully')
+        
+        // Start animation
+        animate()
+      },
+      (progress: any) => {
+        const percent = (progress.loaded / progress.total * 100).toFixed(0)
+        console.log(`Loading 3D model: ${percent}%`)
+      },
+      (error: any) => {
+        console.error('Error loading 3D model:', error)
+        loading3D.value = false
+        model3DError.value = true
+        toast.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'Failed to load 3D model',
+          life: 3000
+        })
+      }
+    )
+  } catch (error) {
+    console.error('Error initializing 3D viewer:', error)
+    loading3D.value = false
+    model3DError.value = true
   }
-  if (primary3DModel.value.default_camera_angle_y) {
-    camera.position.y = Math.sin(primary3DModel.value.default_camera_angle_y * Math.PI / 180) * 3
-  }
-
-  // Load 3D model
-  const loader = new GLTFLoader()
-  loader.load(
-    primary3DModel.value.url,
-    (gltf) => {
-      model = gltf.scene
-      
-      // Center and scale model
-      const box = new THREE.Box3().setFromObject(model)
-      const center = box.getCenter(new THREE.Vector3())
-      const size = box.getSize(new THREE.Vector3())
-      const maxDim = Math.max(size.x, size.y, size.z)
-      const scale = 2 / maxDim
-      
-      model.scale.multiplyScalar(scale)
-      model.position.sub(center.multiplyScalar(scale))
-      
-      scene.add(model)
-      loading3D.value = false
-      animate()
-    },
-    undefined,
-    (error) => {
-      console.error('Error loading 3D model:', error)
-      loading3D.value = false
-      toast.add({
-        severity: 'error',
-        summary: 'Error',
-        detail: 'Failed to load 3D model',
-        life: 3000
-      })
-    }
-  )
 }
 
 const animate = () => {
+  if (!scene || !camera || !renderer || !controls) return
+
   animationId = requestAnimationFrame(animate)
   
   if (autoRotate.value && model) {
@@ -731,11 +819,40 @@ const take3DScreenshot = () => {
 }
 
 const toggle3DFullscreen = () => {
-  if (!canvas3D.value) return
+  if (!viewer3DContainer.value) return
   
-  if (canvas3D.value.requestFullscreen) {
-    canvas3D.value.requestFullscreen()
+  if (viewer3DContainer.value.requestFullscreen) {
+    viewer3DContainer.value.requestFullscreen()
   }
+}
+
+const retryLoad3D = () => {
+  model3DError.value = false
+  init3DViewer()
+}
+
+const cleanup3DScene = () => {
+  if (animationId) {
+    cancelAnimationFrame(animationId)
+    animationId = null
+  }
+  
+  if (renderer) {
+    renderer.dispose()
+    if (viewer3DContainer.value && renderer.domElement.parentNode === viewer3DContainer.value) {
+      viewer3DContainer.value.removeChild(renderer.domElement)
+    }
+    renderer = null
+  }
+  
+  if (controls) {
+    controls.dispose()
+    controls = null
+  }
+  
+  scene = null
+  camera = null
+  model = null
 }
 
 const confirmDelete = () => {
@@ -767,12 +884,9 @@ const deleteProduct = async () => {
 }
 
 const manageVariations = () => {
-  // Navigate to variations management page
-  toast.add({
-    severity: 'info',
-    summary: 'Coming Soon',
-    detail: 'Variation management will be available soon',
-    life: 3000
+  router.push({ 
+    name: 'merchandising.variations', 
+    query: { product_id: productId.value }
   })
 }
 
@@ -782,17 +896,36 @@ const openImageGallery = () => {
 
 const downloadAsset = (asset: any) => {
   window.open(asset.url, '_blank')
+  toast.add({
+    severity: 'success',
+    summary: 'Download Started',
+    detail: `Downloading ${asset.file_name}`,
+    life: 2000
+  })
+}
+
+const handleImageError = (event: Event) => {
+  const img = event.target as HTMLImageElement
+  img.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23f0f0f0" width="400" height="300"/%3E%3Ctext fill="%23999" x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle"%3EImage not found%3C/text%3E%3C/svg%3E'
 }
 
 const getAssetIcon = (assetType: string) => {
   const icons: Record<string, string> = {
     '3D_Model': 'pi pi-cube',
+    '3D_Thumbnail': 'pi pi-image',
     'Image_Main': 'pi pi-image',
     'Image_Gallery': 'pi pi-images',
+    'Image_360': 'pi pi-sync',
     'Video_Product': 'pi pi-video',
-    'Manual_PDF': 'pi pi-file-pdf'
+    'Video_Assembly': 'pi pi-wrench',
+    'Manual_PDF': 'pi pi-file-pdf',
+    'Texture_Map': 'pi pi-palette'
   }
   return icons[assetType] || 'pi pi-file'
+}
+
+const getAssetTypeLabel = (assetType: string) => {
+  return assetType.replace(/_/g, ' ')
 }
 
 const getStockSeverity = (status: string) => {
@@ -824,12 +957,19 @@ const formatDate = (date: string) => {
   if (!date) return 'N/A'
   return new Date(date).toLocaleDateString('en-US', {
     year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
+    month: 'short',
+    day: 'numeric'
   })
 }
+
+// Watch for 3D model changes
+watch(primary3DModel, (newModel) => {
+  if (newModel && viewer3DContainer.value) {
+    nextTick(() => {
+      init3DViewer()
+    })
+  }
+})
 
 onMounted(() => {
   loadProduct()
@@ -837,12 +977,7 @@ onMounted(() => {
 
 // Cleanup on unmount
 onBeforeUnmount(() => {
-  if (animationId) {
-    cancelAnimationFrame(animationId)
-  }
-  if (renderer) {
-    renderer.dispose()
-  }
+  cleanup3DScene()
 })
 </script>
 
@@ -859,5 +994,10 @@ onBeforeUnmount(() => {
 
 :deep(.p-datatable-sm) .p-datatable-tbody > tr > td {
   padding: 0.5rem;
+}
+
+:deep(canvas) {
+  display: block;
+  max-width: 100%;
 }
 </style>

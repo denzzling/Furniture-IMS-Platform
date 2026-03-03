@@ -1,5 +1,4 @@
 <?php
-// app/Http/Controllers/Api/ProductCatalog/ProductAssetController.php
 
 namespace App\Http\Controllers\Api\ProductCatalog;
 
@@ -13,6 +12,10 @@ use Illuminate\Validation\ValidationException;
 
 class ProductAssetController extends BaseController
 {
+    // ❌ REMOVE THESE LINES - They don't belong in controllers
+    // protected $appends = ['url'];
+    // public function getUrlAttribute() { ... }
+
     /**
      * Display a listing of all assets (for admin asset management).
      */
@@ -78,41 +81,6 @@ class ProductAssetController extends BaseController
     }
 
     /**
-     * Display the specified asset.
-     */
-    public function show($id)
-    {
-        try {
-            $asset = ProductAsset::byStore($this->getStoreId())
-                                ->with('product:id,product_name,sku,category_id')
-                                ->findOrFail($id);
-
-            // Add file URL to response
-            $assetData = $asset->toArray();
-            $assetData['url'] = $asset->url;
-            $assetData['thumbnail_url'] = $asset->thumbnail_url;
-
-            return $this->successResponse($assetData, 'Asset retrieved successfully');
-
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            return $this->errorResponse('Asset not found', 404);
-        } catch (\Exception $e) {
-            Log::error('Failed to retrieve asset', [
-                'store_id' => $this->getStoreId(),
-                'asset_id' => $id,
-                'error' => $e->getMessage()
-            ]);
-            
-            return $this->errorResponse(
-                'Failed to retrieve asset',
-                500,
-                [],
-                $e
-            );
-        }
-    }
-
-    /**
      * Store a newly uploaded asset.
      */
     public function store(Request $request)
@@ -121,7 +89,7 @@ class ProductAssetController extends BaseController
             $validated = $this->validateRequest($request, [
                 'product_id' => 'required|exists:products,id',
                 'asset_type' => 'required|in:3D_Model,3D_Thumbnail,Image_Main,Image_Gallery,Image_360,Video_Product,Video_Assembly,Manual_PDF,Texture_Map',
-                'asset_file' => 'required|file|max:102400', // 100MB max
+                'asset_file' => 'required|file|max:102400',
                 'is_primary' => 'boolean',
                 'model_format' => 'required_if:asset_type,3D_Model|in:glb,gltf,obj,fbx,usdz',
                 'is_ar_compatible' => 'boolean',
@@ -132,7 +100,6 @@ class ProductAssetController extends BaseController
                 'display_order' => 'integer'
             ]);
 
-            // Check if product belongs to this store
             $product = Product::byStore($this->getStoreId())->find($validated['product_id']);
             
             if (!$product) {
@@ -145,7 +112,7 @@ class ProductAssetController extends BaseController
                 $file = $request->file('asset_file');
                 $fileName = time() . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '', $file->getClientOriginalName());
                 
-                // Create directory structure: stores/{storeId}/products/{productId}/{assetType}
+                // ✅ FIXED: Remove 'storage/' prefix
                 $assetTypeFolder = strtolower(str_replace('_', '-', $validated['asset_type']));
                 $path = "stores/{$this->getStoreId()}/products/{$product->id}/{$assetTypeFolder}/{$fileName}";
                 
@@ -165,7 +132,7 @@ class ProductAssetController extends BaseController
                     'product_id' => $product->id,
                     'asset_type' => $validated['asset_type'],
                     'file_name' => $fileName,
-                    'file_path' => $path,
+                    'file_path' => $path, // ✅ Without 'storage/' prefix
                     'file_size_kb' => round($file->getSize() / 1024),
                     'mime_type' => $file->getMimeType(),
                     'model_format' => $validated['model_format'] ?? null,
@@ -180,8 +147,9 @@ class ProductAssetController extends BaseController
 
                 DB::commit();
 
+                // ✅ The 'url' will be automatically appended by the model
                 return $this->successResponse(
-                    $asset->makeHidden(['file_path']),
+                    $asset,
                     'Asset uploaded successfully',
                     201
                 );
@@ -189,7 +157,6 @@ class ProductAssetController extends BaseController
             } catch (\Exception $e) {
                 DB::rollBack();
                 
-                // Delete uploaded file if database insert fails
                 if (isset($path) && Storage::disk('public')->exists($path)) {
                     Storage::disk('public')->delete($path);
                 }
@@ -213,6 +180,87 @@ class ProductAssetController extends BaseController
             
             return $this->errorResponse(
                 'Failed to upload asset: ' . $e->getMessage(),
+                500,
+                [],
+                $e
+            );
+        }
+    }
+
+    // ... rest of your methods remain the same
+    
+    /**
+     * Get assets for a product.
+     */
+    public function getByProduct($productId)
+    {
+        try {
+            $product = Product::byStore($this->getStoreId())->find($productId);
+            
+            if (!$product) {
+                return $this->errorResponse('Product not found or does not belong to this store', 404);
+            }
+
+            $assets = ProductAsset::byStore($this->getStoreId())
+                                 ->where('product_id', $productId)
+                                 ->orderBy('asset_type')
+                                 ->orderBy('display_order')
+                                 ->orderBy('is_primary', 'desc')
+                                 ->get();
+
+            // ✅ URL will be automatically included via $appends
+            $grouped = $assets->groupBy('asset_type');
+
+            return $this->successResponse([
+                'product_id' => (int) $productId,
+                'total_assets' => $assets->count(),
+                'assets_by_type' => $grouped,
+                'all_assets' => $assets
+            ], 'Assets retrieved successfully');
+
+        } catch (\Exception $e) {
+            Log::error('Failed to retrieve assets', [
+                'store_id' => $this->getStoreId(),
+                'product_id' => $productId,
+                'error' => $e->getMessage()
+            ]);
+            
+            return $this->errorResponse(
+                'Failed to retrieve assets: ' . $e->getMessage(),
+                500,
+                [],
+                $e
+            );
+        }
+    }
+    /**
+     * Display the specified asset.
+     */
+    public function show($id)
+    {
+        try {
+            $asset = ProductAsset::byStore($this->getStoreId())
+                                ->with('product:id,product_name,sku,category_id')
+                                ->findOrFail($id);
+
+            // Add file URL to response
+            $assetData = $asset->toArray();
+            $assetData['file_path'] = $asset->url;
+            $assetData['thumbnail_url'] = $asset->thumbnail_url;
+
+            return $this->successResponse($assetData, 'Asset retrieved successfully');
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return $this->errorResponse('Asset not found', 404);
+        } catch (\Exception $e) {
+            Log::error('Failed to retrieve asset', [
+                'store_id' => $this->getStoreId(),
+                'asset_id' => $id,
+                'error' => $e->getMessage()
+            ]);
+            
+            return $this->errorResponse(
+                'Failed to retrieve asset',
                 500,
                 [],
                 $e
@@ -407,62 +455,62 @@ class ProductAssetController extends BaseController
     /**
      * Get assets for a product.
      */
-    public function getByProduct($productId)
-    {
-        try {
-            // Verify product belongs to store
-            $product = Product::byStore($this->getStoreId())->find($productId);
+    // public function getByProduct($productId)
+    // {
+    //     try {
+    //         // Verify product belongs to store
+    //         $product = Product::byStore($this->getStoreId())->find($productId);
             
-            if (!$product) {
-                return $this->errorResponse('Product not found or does not belong to this store', 404);
-            }
+    //         if (!$product) {
+    //             return $this->errorResponse('Product not found or does not belong to this store', 404);
+    //         }
 
-            $assets = ProductAsset::byStore($this->getStoreId())
-                                 ->where('product_id', $productId)
-                                 ->orderBy('asset_type')
-                                 ->orderBy('display_order')
-                                 ->orderBy('is_primary', 'desc')
-                                 ->get();
+    //         $assets = ProductAsset::byStore($this->getStoreId())
+    //                              ->where('product_id', $productId)
+    //                              ->orderBy('asset_type')
+    //                              ->orderBy('display_order')
+    //                              ->orderBy('is_primary', 'desc')
+    //                              ->get();
 
-            // Group by asset type
-            $grouped = $assets->groupBy('asset_type')->map(function($items) {
-                return $items->map(function($item) {
-                    return [
-                        'id' => $item->id,
-                        'type' => $item->asset_type,
-                        'url' => $item->url,
-                        'thumbnail' => $item->thumbnail_url,
-                        'is_primary' => $item->is_primary,
-                        'display_order' => $item->display_order,
-                        'model_format' => $item->model_format,
-                        'ar_compatible' => $item->is_ar_compatible,
-                        'alt_text' => $item->alt_text,
-                        'camera_settings' => $item->camera_settings,
-                        'created_at' => $item->created_at
-                    ];
-                });
-            });
+    //         // Group by asset type
+    //         $grouped = $assets->groupBy('asset_type')->map(function($items) {
+    //             return $items->map(function($item) {
+    //                 return [
+    //                     'id' => $item->id,
+    //                     'type' => $item->asset_type,
+    //                     'url' => $item->url,
+    //                     'thumbnail' => $item->thumbnail_url,
+    //                     'is_primary' => $item->is_primary,
+    //                     'display_order' => $item->display_order,
+    //                     'model_format' => $item->model_format,
+    //                     'ar_compatible' => $item->is_ar_compatible,
+    //                     'alt_text' => $item->alt_text,
+    //                     'camera_settings' => $item->camera_settings,
+    //                     'created_at' => $item->created_at
+    //                 ];
+    //             });
+    //         });
 
-            return $this->successResponse([
-                'product_id' => (int) $productId,
-                'total_assets' => $assets->count(),
-                'assets_by_type' => $grouped,
-                'all_assets' => $assets
-            ], 'Assets retrieved successfully');
+    //         return $this->successResponse([
+    //             'product_id' => (int) $productId,
+    //             'total_assets' => $assets->count(),
+    //             'assets_by_type' => $grouped,
+    //             'all_assets' => $assets
+    //         ], 'Assets retrieved successfully');
 
-        } catch (\Exception $e) {
-            Log::error('Failed to retrieve assets', [
-                'store_id' => $this->getStoreId(),
-                'product_id' => $productId,
-                'error' => $e->getMessage()
-            ]);
+    //     } catch (\Exception $e) {
+    //         Log::error('Failed to retrieve assets', [
+    //             'store_id' => $this->getStoreId(),
+    //             'product_id' => $productId,
+    //             'error' => $e->getMessage()
+    //         ]);
             
-            return $this->errorResponse(
-                'Failed to retrieve assets: ' . $e->getMessage(),
-                500,
-                [],
-                $e
-            );
-        }
-    }
+    //         return $this->errorResponse(
+    //             'Failed to retrieve assets: ' . $e->getMessage(),
+    //             500,
+    //             [],
+    //             $e
+    //         );
+    //     }
+    // }
 }

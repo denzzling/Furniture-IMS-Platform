@@ -3,11 +3,11 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Core\NavigationItem;
+use App\Models\Core\Permission;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use App\Models\Core\Permission;        // ✅ Updated namespace
-use App\Models\Core\NavigationItem;    // ✅ Updated namespace
-use App\Models\Core\UserPermission;    // ✅ Updated namespace
+use Illuminate\Support\Facades\Log;
 
 class UserNavigationController extends Controller
 {
@@ -16,99 +16,169 @@ class UserNavigationController extends Controller
      */
     public function getUserNavigation(Request $request)
     {
-        $user = $request->user();
-        
-        if (!$user) {
+        try {
+            $user = auth()->user();
+            
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized'
+                ], 401);
+            }
+
+            // Load user's role with permissions
+            $user->load(['role']);
+            
+            // Get permissions based on role
+            $permissions = $this->getUserPermissions($user);
+            
+            // Get navigation items user has access to
+            $navigation = $this->getUserNavigationItems($user, $permissions);
+
             return response()->json([
-                'message' => 'Unauthenticated'
-            ], 401);
+                'success' => true,
+                'permissions' => $permissions,
+                'navigation' => $navigation
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to load user navigation', [
+                'error' => $e->getMessage(),
+                'user_id' => auth()->id()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to load navigation',
+                'error' => config('app.debug') ? $e->getMessage() : null
+            ], 500);
+        }
+    }
+
+    /**
+     * Get user permissions from their role
+     */
+    private function getUserPermissions($user): array
+    {
+        if (!$user->role) {
+            return [];
         }
 
-        // Get user's role
-        $roleId = $user->role_id ?? null;
-        
-        if (!$roleId) {
-            return response()->json([
-                'message' => 'User has no role assigned',
-                'permissions' => [],
-                'navigation' => []
-            ], 403);
-        }
-
-        // Get all permissions for user's role
+        // Get permissions from role_permissions pivot table
         $rolePermissions = DB::table('role_permissions')
-            ->where('role_id', $roleId)
-            ->pluck('permission_id')
+            ->join('permissions', 'role_permissions.permission_id', '=', 'permissions.id')
+            ->where('role_permissions.role_id', $user->role_id)
+            ->where('permissions.is_active', true)
+            ->whereNull('permissions.deleted_at')
+            ->pluck('permissions.name')
             ->toArray();
 
         // Get user-specific permission overrides
         $userGrants = DB::table('user_permissions')
-            ->where('user_id', $user->id)
-            ->where('type', 'grant')
-            ->pluck('permission_id')
+            ->join('permissions', 'user_permissions.permission_id', '=', 'permissions.id')
+            ->where('user_permissions.user_id', $user->id)
+            ->where('user_permissions.type', 'grant')
+            ->where('permissions.is_active', true)
+            ->whereNull('permissions.deleted_at')
+            ->pluck('permissions.name')
             ->toArray();
 
         $userRevokes = DB::table('user_permissions')
-            ->where('user_id', $user->id)
-            ->where('type', 'revoke')
-            ->pluck('permission_id')
+            ->join('permissions', 'user_permissions.permission_id', '=', 'permissions.id')
+            ->where('user_permissions.user_id', $user->id)
+            ->where('user_permissions.type', 'revoke')
+            ->pluck('permissions.name')
             ->toArray();
 
-        // Merge permissions
-        $finalPermissionIds = array_diff(
-            array_unique(array_merge($rolePermissions, $userGrants)),
-            $userRevokes
-        );
+        // Merge role permissions with grants, then remove revokes
+        $allPermissions = array_merge($rolePermissions, $userGrants);
+        $finalPermissions = array_diff($allPermissions, $userRevokes);
 
-        // Get permission names
-        $permissions = DB::table('permissions')
-            ->whereIn('id', $finalPermissionIds)
-            ->where('is_active', true)
-            ->pluck('name')
-            ->toArray();
-
-        // Get navigation items
-        $navigationItems = DB::table('navigation_items as ni')
-            ->select(
-                'ni.id',
-                'ni.name',
-                'ni.display_name',
-                'ni.module',
-                'ni.route_name',
-                'ni.route_path',
-                'ni.icon',
-                'ni.parent_id',
-                'ni.display_order',
-                'ni.meta'
-            )
-            ->where('ni.is_active', true)
-            ->whereExists(function ($query) use ($finalPermissionIds) {
-                $query->select(DB::raw(1))
-                    ->from('navigation_permissions as np')
-                    ->whereColumn('np.navigation_item_id', 'ni.id')
-                    ->whereIn('np.permission_id', $finalPermissionIds);
-            })
-            ->orderBy('ni.display_order')
-            ->get()
-            ->map(function ($item) {
-                $item->meta = $item->meta ? json_decode($item->meta, true) : null;
-                return $item;
-            });
-
-        return response()->json([
-            'permissions' => $permissions,
-            'navigation' => $navigationItems,
-            'user' => [
-                'id' => $user->id,
-                'name' => ($user->first_name ?? '') . ' ' . ($user->last_name ?? ''),
-                'email' => $user->email,
-                'role' => $user->role ?? 'unknown'
-            ]
-        ]);
+        return array_values(array_unique($finalPermissions));
     }
 
     /**
-     * Check if user has a specific permission
+     * Get navigation items user can access
+     */
+    private function getUserNavigationItems($user, array $permissions): array
+    {
+        // Get all active navigation items
+        $navigationItems = NavigationItem::where('is_active', true)
+            ->whereNull('deleted_at')
+            ->with(['permissions'])
+            ->orderBy('display_order')
+            ->get();
+
+        $accessibleNavigation = [];
+
+        foreach ($navigationItems as $navItem) {
+            // Check if user has permission to access this navigation item
+            if ($this->canAccessNavigationItem($navItem, $permissions)) {
+                $accessibleNavigation[] = [
+                    'id' => $navItem->id,
+                    'name' => $navItem->name,
+                    'display_name' => $navItem->display_name,
+                    'module' => $navItem->module,
+                    'route_name' => $navItem->route_name,
+                    'route_path' => $navItem->route_path,
+                    'icon' => $navItem->icon,
+                    'parent_id' => $navItem->parent_id,
+                    'display_order' => $navItem->display_order,
+                    'section' => $navItem->meta['section'] ?? null, // Get section from meta
+                    'meta' => $navItem->meta,
+                    'is_active' => $navItem->is_active,
+                    'badge_count' => $this->getBadgeCount($navItem, $user)
+                ];
+            }
+        }
+
+        return $accessibleNavigation;
+    }
+
+    /**
+     * Check if user can access navigation item
+     */
+    private function canAccessNavigationItem($navItem, array $userPermissions): bool
+    {
+        // If no permissions required, everyone can access
+        if ($navItem->permissions->isEmpty()) {
+            return true;
+        }
+
+        // Check if user has any of the required permissions
+        $requiredPermissions = $navItem->permissions->pluck('name')->toArray();
+        
+        return !empty(array_intersect($requiredPermissions, $userPermissions));
+    }
+
+    /**
+     * Get badge count for navigation item (e.g., pending items)
+     */
+    private function getBadgeCount($navItem, $user): int
+    {
+        // You can customize this based on your needs
+        // For example, show count of pending approvals, new items, etc.
+        
+        switch ($navItem->name) {
+            case 'merchandising.inventory':
+                // Count low stock items
+                return DB::table('product_variations')
+                    ->where('stock_quantity', '<=', 10)
+                    ->count();
+                
+            case 'merchandising.products':
+                // Count inactive products
+                return DB::table('products')
+                    ->where('is_active', false)
+                    ->count();
+                
+            default:
+                return 0;
+        }
+    }
+
+    /**
+     * Check if user has specific permission
      */
     public function checkPermission(Request $request)
     {
@@ -116,45 +186,21 @@ class UserNavigationController extends Controller
             'permission' => 'required|string'
         ]);
 
-        $user = $request->user();
-        $permissionName = $request->input('permission');
-        $roleId = $user->role_id ?? null;
-
-        if (!$roleId) {
-            return response()->json(['has_permission' => false]);
+        $user = auth()->user();
+        
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'has_permission' => false
+            ], 401);
         }
 
-        $permission = DB::table('permissions')
-            ->where('name', $permissionName)
-            ->where('is_active', true)
-            ->first();
-
-        if (!$permission) {
-            return response()->json(['has_permission' => false]);
-        }
-
-        $hasRolePermission = DB::table('role_permissions')
-            ->where('role_id', $roleId)
-            ->where('permission_id', $permission->id)
-            ->exists();
-
-        $hasUserGrant = DB::table('user_permissions')
-            ->where('user_id', $user->id)
-            ->where('permission_id', $permission->id)
-            ->where('type', 'grant')
-            ->exists();
-
-        $hasUserRevoke = DB::table('user_permissions')
-            ->where('user_id', $user->id)
-            ->where('permission_id', $permission->id)
-            ->where('type', 'revoke')
-            ->exists();
-
-        $hasPermission = ($hasRolePermission || $hasUserGrant) && !$hasUserRevoke;
+        $permissions = $this->getUserPermissions($user);
+        $hasPermission = in_array($request->permission, $permissions);
 
         return response()->json([
-            'has_permission' => $hasPermission,
-            'permission' => $permissionName
+            'success' => true,
+            'has_permission' => $hasPermission
         ]);
     }
 }

@@ -72,7 +72,7 @@
                   rounded 
                   size="small"
                   v-tooltip.top="'Edit'"
-                  @click="editTag(tag)"
+                  @click="openEditDialog(tag)"
                 />
                 <Button 
                   icon="pi pi-trash" 
@@ -139,123 +139,23 @@
       />
     </div>
 
-    <!-- Create/Edit Dialog -->
+    <!-- Create/Edit Tag Dialog -->
     <Dialog 
-      v-model:visible="dialogVisible" 
+      v-model:visible="formDialogVisible" 
       :header="editMode ? 'Edit Tag' : 'Create Tag'" 
       :modal="true" 
       class="w-full max-w-lg"
     >
-      <div class="space-y-4 mt-4">
-        <!-- Tag Name -->
-        <div class="flex flex-col gap-2">
-          <label for="tag_name" class="text-sm font-semibold text-gray-700">
-            Tag Name <span class="text-red-500">*</span>
-          </label>
-          <InputText 
-            id="tag_name"
-            v-model="formData.tag_name" 
-            placeholder="e.g., Modern, Vintage, Sale" 
-            :class="{ 'p-invalid': errors.tag_name }"
-          />
-          <small v-if="errors.tag_name" class="text-red-500">{{ errors.tag_name }}</small>
-        </div>
-
-        <!-- Tag Type -->
-        <div class="flex flex-col gap-2">
-          <label for="tag_type" class="text-sm font-semibold text-gray-700">
-            Tag Type <span class="text-red-500">*</span>
-          </label>
-          <Select 
-            id="tag_type"
-            v-model="formData.tag_type" 
-            :options="tagTypes" 
-            placeholder="Select tag type" 
-            :class="{ 'p-invalid': errors.tag_type }"
-          />
-          <small v-if="errors.tag_type" class="text-red-500">{{ errors.tag_type }}</small>
-          <small class="text-gray-500">
-            • Style: Design aesthetics (Modern, Vintage, etc.)<br>
-            • Room: Room categories (Living Room, Bedroom, etc.)<br>
-            • Promotion: Sales and offers (Sale, New, Limited, etc.)<br>
-            • Feature: Product features (Eco-friendly, Handmade, etc.)
-          </small>
-        </div>
-
-        <!-- Slug (Auto-generated) -->
-        <div class="flex flex-col gap-2">
-          <label for="slug" class="text-sm font-semibold text-gray-700">
-            Slug (URL-friendly)
-          </label>
-          <InputText 
-            id="slug"
-            v-model="formData.slug" 
-            placeholder="auto-generated-from-name" 
-            disabled
-            class="bg-gray-100"
-          />
-          <small class="text-gray-500">Auto-generated from tag name</small>
-        </div>
-
-        <!-- Description -->
-        <div class="flex flex-col gap-2">
-          <label for="description" class="text-sm font-semibold text-gray-700">
-            Description
-          </label>
-          <Textarea 
-            id="description"
-            v-model="formData.description" 
-            rows="3" 
-            placeholder="Optional tag description..."
-          />
-        </div>
-
-        <!-- Color (Optional) -->
-        <div class="flex flex-col gap-2">
-          <label for="color_hex" class="text-sm font-semibold text-gray-700">
-            Color (Optional)
-          </label>
-          <div class="flex gap-2 items-center">
-            <input 
-              type="color"
-              v-model="formData.color_hex"
-              class="h-10 w-20 rounded border border-gray-300 cursor-pointer"
-            />
-            <InputText 
-              id="color_hex"
-              v-model="formData.color_hex" 
-              placeholder="#000000" 
-              class="flex-1"
-              maxlength="7"
-            />
-          </div>
-          <small class="text-gray-500">Choose a color for visual representation</small>
-        </div>
-
-        <!-- Display Order -->
-        <div class="flex flex-col gap-2">
-          <label for="display_order" class="text-sm font-semibold text-gray-700">
-            Display Order
-          </label>
-          <InputNumber 
-            id="display_order"
-            v-model="formData.display_order" 
-            :min="0"
-            showButtons
-          />
-          <small class="text-gray-500">Lower numbers appear first</small>
-        </div>
-
-        <!-- Active Status -->
-        <div class="flex items-center gap-2">
-          <Checkbox v-model="formData.is_active" inputId="is_active" :binary="true" />
-          <label for="is_active" class="text-sm font-semibold text-gray-700 cursor-pointer">Active</label>
-        </div>
-      </div>
-
+      <TagForm 
+        ref="tagFormRef"
+        :tagId="currentTagId"
+        @save="handleSave"
+        @cancel="formDialogVisible = false"
+      />
+      
       <template #footer>
-        <Button label="Cancel" severity="secondary" outlined @click="dialogVisible = false" />
-        <Button :label="editMode ? 'Update' : 'Create'" icon="pi pi-check" @click="saveTag" :loading="saving" />
+        <Button label="Cancel" severity="secondary" outlined @click="formDialogVisible = false" />
+        <Button :label="editMode ? 'Update' : 'Create'" icon="pi pi-check" @click="submitForm" :loading="saving" />
       </template>
     </Dialog>
 
@@ -280,40 +180,39 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, watch, onMounted } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useToast } from 'primevue/usetoast'
-
 import { useAuthStore } from '../../../../stores/auth'
 import merchandisingService from '../../../../services/merchandising.service'
+import TagForm from './TagForm.vue'
+
+import Card from 'primevue/card'
+import Button from 'primevue/button'
+import InputText from 'primevue/inputtext'
+import Select from 'primevue/select'
+import Dialog from 'primevue/dialog'
+import Skeleton from 'primevue/skeleton'
+import Tag from 'primevue/tag'
+import Paginator from 'primevue/paginator'
+import IconField from 'primevue/iconfield'
+import InputIcon from 'primevue/inputicon'
 
 const toast = useToast()
 const authStore = useAuthStore()
 
-interface Tag {
-  id: number
-  tag_name: string
-  tag_type: string
-  slug: string
-  description?: string
-  color_hex?: string
-  display_order: number
-  is_active: boolean
-  products_count?: number
-}
-
-
-
 // State
-const tags = ref<Tag[]>([])
+const tags = ref([])
 const loading = ref(false)
 const saving = ref(false)
 const deleting = ref(false)
-const dialogVisible = ref(false)
+const formDialogVisible = ref(false)
 const deleteDialogVisible = ref(false)
 const editMode = ref(false)
-const currentTag = ref<Tag []| null>(null)
+const currentTag = ref(null)
+const currentTagId = ref(null)
 const searchQuery = ref('')
 const totalRecords = ref(0)
+const tagFormRef = ref(null)
 
 const filters = reactive({
   tag_type: null,
@@ -322,34 +221,12 @@ const filters = reactive({
   per_page: 15
 })
 
-const formData = reactive({
-  tag_name: '',
-  tag_type: 'Style',
-  slug: '',
-  description: '',
-  color_hex: '#3B82F6',
-  display_order: 0,
-  is_active: true
-})
-
-const errors = ref<Record<string, string>>({})
-
 const tagTypes = ['Style', 'Room', 'Promotion', 'Feature']
 
 const statusOptions = [
   { label: 'Active', value: true },
   { label: 'Inactive', value: false }
 ]
-
-// Watch tag name to auto-generate slug
-watch(() => formData.tag_name, (newVal) => {
-  if (!editMode.value) {
-    formData.slug = newVal
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '')
-  }
-})
 
 // Methods
 const loadTags = async () => {
@@ -384,60 +261,40 @@ const onPage = (event: any) => {
 }
 
 const openCreateDialog = () => {
-  resetForm()
+  currentTagId.value = null
   editMode.value = false
-  dialogVisible.value = true
+  formDialogVisible.value = true
 }
 
-const editTag = (tag: any) => {
-  currentTag.value = tag
-  Object.assign(formData, {
-    tag_name: tag.tag_name,
-    tag_type: tag.tag_type,
-    slug: tag.slug || '',
-    description: tag.description || '',
-    color_hex: tag.color_hex || '#3B82F6',
-    display_order: tag.display_order || 0,
-    is_active: tag.is_active
-  })
+const openEditDialog = (tag: any) => {
+  currentTagId.value = tag.id
   editMode.value = true
-  dialogVisible.value = true
+  formDialogVisible.value = true
 }
 
-const saveTag = async () => {
-  if (!validate()) return
-
+const submitForm = async () => {
+  if (!tagFormRef.value) return
+  
   saving.value = true
-  try {
-    if (editMode.value) {
-      await merchandisingService.updateTag(currentTag.value.id, formData)
-      toast.add({
-        severity: 'success',
-        summary: 'Success',
-        detail: 'Tag updated successfully',
-        life: 3000
-      })
-    } else {
-      await merchandisingService.createTag(formData)
-      toast.add({
-        severity: 'success',
-        summary: 'Success',
-        detail: 'Tag created successfully',
-        life: 3000
-      })
-    }
-    dialogVisible.value = false
-    loadTags()
-  } catch (error: any) {
+  const success = await tagFormRef.value.save()
+  saving.value = false
+  
+  if (success) {
     toast.add({
-      severity: 'error',
-      summary: 'Error',
-      detail: error.response?.data?.message || 'Failed to save tag',
+      severity: 'success',
+      summary: 'Success',
+      detail: editMode.value ? 'Tag updated successfully' : 'Tag created successfully',
       life: 3000
     })
-  } finally {
-    saving.value = false
+    formDialogVisible.value = false
+    loadTags()
   }
+}
+
+const handleSave = () => {
+  // This is called from the child component if needed
+  formDialogVisible.value = false
+  loadTags()
 }
 
 const confirmDelete = (tag: any) => {
@@ -467,31 +324,6 @@ const deleteTag = async () => {
   } finally {
     deleting.value = false
   }
-}
-
-const validate = () => {
-  errors.value = {}
-  
-  if (!formData.tag_name) {
-    errors.value.tag_name = 'Tag name is required'
-  }
-  
-  if (!formData.tag_type) {
-    errors.value.tag_type = 'Tag type is required'
-  }
-  
-  return Object.keys(errors.value).length === 0
-}
-
-const resetForm = () => {
-  formData.tag_name = ''
-  formData.tag_type = 'Style'
-  formData.slug = ''
-  formData.description = ''
-  formData.color_hex = '#3B82F6'
-  formData.display_order = 0
-  formData.is_active = true
-  errors.value = {}
 }
 
 const getTagTypeSeverity = (type: string) => {

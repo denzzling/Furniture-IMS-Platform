@@ -72,6 +72,7 @@ return new class extends Migration
             $table->string('name', 100)->unique(); // e.g., 'merchandising.products'
             $table->string('display_name', 200);
             $table->string('module', 50); // 'merchandising', 'hr', 'inventory', etc.
+            $table->string('section', 200)->nullable(); // For grouping in UI (e.g., 'Products', 'Settings')
             $table->string('route_name', 200); // Vue router name
             $table->string('route_path', 200); // /merchandising/products
             $table->string('icon', 100)->nullable(); // pi pi-box
