@@ -1,149 +1,205 @@
-<!-- Unauthorized.vue -->
 <template>
-  <div class="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 flex flex-col items-center justify-center px-4">
-    <!-- Main Card -->
-    <div class="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center transform transition-all duration-300 hover:shadow-2xl">
-      <!-- Icon Container -->
-      <div class="relative mb-6">
-        <div class="w-24 h-24 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4 ring-8 ring-red-100">
-          <i class="pi pi-lock text-4xl text-red-500"></i>
+  <div
+    class="min-h-screen bg-linear-to-br from-slate-100 via-blue-50 to-indigo-100 flex flex-col items-center justify-center px-4 relative overflow-hidden">
+  
+    <!-- Subtle Background Pattern -->
+    <div class="absolute inset-0 opacity-30">
+      <div
+        class="absolute top-20 left-20 w-72 h-72 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl animate-blob">
+      </div>
+      <div
+        class="absolute top-40 right-20 w-72 h-72 bg-purple-200 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-2000">
+      </div>
+      <div
+        class="absolute bottom-20 left-1/2 w-72 h-72 bg-pink-200 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-4000">
+      </div>
+    </div>
+  
+  
+    <div class="relative z-10 text-center max-w-2xl w-full space-y-8">
+      <!-- 403 Error Code -->
+      <div>
+        <h1 class="text-8xl md:text-9xl font-black text-slate-700 tracking-tight">
+          403
+        </h1>
+      </div>
+  
+      <!-- Heading -->
+      <div class="space-y-4">
+        <h2 class="text-4xl md:text-5xl font-bold text-slate-800 tracking-tight">
+          Access Denied
+        </h2>
+        <p class="text-lg md:text-xl text-slate-600 max-w-md mx-auto">
+          You don't have the permissions to access this page
+        </p>
+      </div>
+    </div>
+  
+    <!-- Current Role Display -->
+    <!-- <div
+                  class="inline-flex items-center gap-3 px-6 py-3 bg-white/60 backdrop-blur-sm rounded-full border border-slate-200 shadow-lg">
+                  <div
+                    class="w-10 h-10 bg-linear-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center shadow-md">
+                    <i class="pi pi-user text-white text-sm"></i>
+                  </div>
+                  <div class="text-left">
+                    <p class="text-xs text-slate-500 font-medium uppercase tracking-wide">Your Role</p>
+                    <p class="text-base font-bold text-slate-800">{{ authStore.userRole || 'Unknown' }}</p>
+                  </div>
+                </div> -->
+  
+    <!-- Countdown Timer -->
+    <div class="space-y-4 py-6">
+      <div class="flex items-center justify-center gap-3">
+        <div class="text-left">
+          <p class="text-sm text-slate-600 font-medium">Auto logout in</p>
+          <p class="text-4xl font-bold text-slate-800 tabular-nums text-center">{{ countdown }}</p>
         </div>
-        <!-- Optional decorative element -->
-        <div class="absolute -top-2 -right-2 w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
-          <i class="pi pi-exclamation-triangle text-yellow-600"></i>
+      </div>
+  
+      <!-- Progress Bar -->
+      <div class="max-w-xs mx-19-auto">
+        <div class="h-2 bg-white/60 backdrop-blur-sm rounded-full overflow-hidden shadow-inner border border-slate-200">
+          <div
+            class="h-full bg-linear-to-r from-blue-400 via-blue-500 to-violet-500 transition-all duration-1000 ease-linear rounded-full"
+            :style="{ width: progressWidth + '%' }"></div>
         </div>
       </div>
-
-      <!-- Header -->
-      <h1 class="text-3xl font-bold text-gray-800 mb-3">
-        Access Denied
-      </h1>
-      
-      <!-- Message -->
-      <p class="text-gray-600 mb-2">
-        You don't have permission to access this page.
-      </p>
-      
-      <!-- Additional info about current role -->
-      <div class="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 rounded-full mb-8">
-        <i class="pi pi-user text-blue-500"></i>
-        <span class="text-sm font-medium text-blue-700">
-          Current Role: <span class="font-bold">{{ authStore.userRole || 'None' }}</span>
-        </span>
-      </div>
-
-      <!-- Action Buttons Container -->
-      <div class="flex flex-col sm:flex-row gap-4 justify-center mt-8">
-        <!-- Dashboard Button -->
-        <router-link 
-          to="/dashboard"
-          class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary-500 hover:bg-primary-600 text-white font-medium rounded-lg transition-all duration-200 transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
-        >
-          <i class="pi pi-home"></i>
-          Go to Dashboard
-        </router-link>
-        
-        <!-- Logout Button -->
-        <Button 
-          @click="handleLogout"
-          severity="danger"
-          class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg transition-all duration-200 transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
-          :loading="isLoggingOut"
-          :disabled="isLoggingOut"
-        >
-          <i class="pi pi-sign-out" :class="{ 'hidden': isLoggingOut }"></i>
-          <i class="pi pi-spin pi-spinner" v-if="isLoggingOut"></i>
-          {{ isLoggingOut ? 'Logging out...' : 'Logout' }}
-        </Button>
-      </div>
-
-      <!-- Additional Help Text -->
-      <p class="text-sm text-gray-500 mt-8 pt-6 border-t border-gray-100">
-        Need different access? Contact your administrator.
+    </div>
+  
+    <!-- Action Buttons -->
+    <div class="flex flex-col sm:flex-row gap-4 justify-center pt-4">
+      <Button @click="cancelAndGoBack" label="Go to Dashboard" severity="info" />
+      <!-- <span class="flex items-center gap-2">
+                        <i class="pi pi-arrow-left text-lg group-hover:-translate-x-1 transition-transform"></i>
+                        Go Back
+                      </span>
+                    </Button> -->
+  
+      <Button @click="handleLogout" :disabled="isLoggingOut" :label="isLoggingOut ? 'Logging out...' : 'Logout Now'"
+        :icon="isLoggingOut ? 'pi pi-spinner pi-spin' : ''" icon-pos="right" severity="danger" />
+    </div>
+  
+    <!-- Help Text -->
+    <div class="pt-8">
+      <p class="text-sm text-slate-600 flex items-center justify-center gap-2">
+        <i class="pi pi-info-circle text-blue-500"></i>
+        Need access? Contact your system administrator
       </p>
     </div>
-
-    <!-- Optional: Back to home link -->
-    <router-link 
-      to="/" 
-      class="inline-flex items-center gap-2 mt-8 text-gray-500 hover:text-primary-600 transition-colors duration-200"
-    >
-      <i class="pi pi-arrow-left"></i>
-      <span class="text-sm font-medium">Back to Home</span>
-    </router-link>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import Button from 'primevue/button';
-import { useAuthStore } from '../stores/auth';
-import { useRouter } from 'vue-router';
-import axios from 'axios';
+import { ref, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '../stores/auth'
 
-const router = useRouter();
-const authStore = useAuthStore();
-const isLoggingOut = ref(false);
+const router = useRouter()
+const authStore = useAuthStore()
 
-// Debug info (consider removing in production)
-console.log('User Role:', authStore.userRole);
+const countdown = ref(5)
+const progressWidth = ref(100)
+const isLoggingOut = ref(false)
+let countdownInterval: number | null = null
 
 const handleLogout = async () => {
-  isLoggingOut.value = true;
-  
-  // Debug logs (consider removing in production)
-  console.log('1. Current token before logout:', authStore.token);
-  console.log('2. Current localStorage:', {
-    auth_token: localStorage.getItem('auth_token'),
-    user: localStorage.getItem('user')
-  });
+  if (isLoggingOut.value) return
+
+  isLoggingOut.value = true
+
+  // Clear the countdown interval
+  if (countdownInterval !== null) {
+    clearInterval(countdownInterval)
+  }
 
   try {
-    // Optional: Uncomment if you have a logout endpoint
-    // await axios.post('/api/auth/logout');
-    
-    // Clear auth store
-    authStore.logout();
-    
-    // Clear axios authorization header
-    delete axios.defaults.headers.common['Authorization'];
-    
-    // Navigate to login
-    router.replace('/login');
-    
+    await authStore.logout()
+    router.push('/login')
   } catch (error) {
-    console.error('Logout error:', error);
-    
-    // Emergency cleanup
-    localStorage.clear();
-    sessionStorage.clear();
-    delete axios.defaults.headers.common['Authorization'];
-    
-    // Still navigate to login even if API fails
-    router.replace('/login');
+    console.error('Logout failed:', error)
+    // Force redirect to login even if logout fails
+    router.push('/login')
   } finally {
-    isLoggingOut.value = false;
+    isLoggingOut.value = false
   }
-};
+}
+
+const cancelAndGoBack = () => {
+  // Clear the countdown
+  if (countdownInterval !== null) {
+    clearInterval(countdownInterval)
+  }
+
+  // Go back to previous page or default route
+  if (window.history.length > 1) {
+    router.back()
+  } else {
+    router.push(authStore.defaultRoute)
+  }
+}
+
+const startCountdown = () => {
+  countdownInterval = setInterval(() => {
+    countdown.value--
+    progressWidth.value = (countdown.value / 5) * 100
+
+    if (countdown.value <= 0) {
+      if (countdownInterval !== null) {
+        clearInterval(countdownInterval)
+      }
+      handleLogout()
+    }
+  }, 1000) as unknown as number
+}
+
+onMounted(() => {
+  startCountdown()
+})
+
+onUnmounted(() => {
+  if (countdownInterval !== null) {
+    clearInterval(countdownInterval)
+  }
+})
 </script>
 
 <style scoped>
-/* Custom animations */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
+/* Blob animation */
+@keyframes blob {
+
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+
+  25% {
+    transform: translate(20px, -20px) scale(1.1);
+  }
+
+  50% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+
+  75% {
+    transform: translate(20px, 20px) scale(1.05);
   }
 }
 
-.unauthorized {
-  animation: fadeIn 0.5s ease-out;
+.animate-blob {
+  animation: blob 7s infinite;
 }
 
-/* Custom hover effects */
+.animation-delay-2000 {
+  animation-delay: 2s;
+}
 
+.animation-delay-4000 {
+  animation-delay: 4s;
+}
+
+/* Smooth number transition */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
 </style>

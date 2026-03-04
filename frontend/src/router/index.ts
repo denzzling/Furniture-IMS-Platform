@@ -202,15 +202,19 @@ router.beforeEach(async (to, from, next) => {
     to: to.path,
     from: from.path,
     isAuthenticated,
+    userRole: authStore.userRole,
+    routeRoles: to.meta.role || to.meta.roles,
     permissionsLoaded: authStore.permissionsLoaded,
     isLoadingPermissions: authStore.isLoadingPermissions
   })
 
+  // Check if route requires authentication
   if (to.meta.requiresAuth && !isAuthenticated) {
     console.log('❌ Not authenticated')
     return next({ name: 'Login', query: { redirect: to.fullPath } })
   }
 
+  // Load permissions if authenticated
   if (isAuthenticated && !authStore.permissionsLoaded && !authStore.isLoadingPermissions) {
     console.log('📥 Router guard loading permissions...')
     await authStore.loadPermissions()
@@ -221,6 +225,25 @@ router.beforeEach(async (to, from, next) => {
     }
   }
 
+  // ✅ ADD THIS: Check if user has required role
+  if (to.meta.role || to.meta.roles) {
+    const requiredRoles = to.meta.role || to.meta.roles
+    const userRole = authStore.userRole
+
+    const hasRole = Array.isArray(requiredRoles) 
+      ? requiredRoles.includes(userRole)
+      : requiredRoles === userRole
+
+    if (!hasRole) {
+      console.log('❌ Access denied - insufficient role:', {
+        userRole,
+        requiredRoles
+      })
+      return next({ name: 'Unauthorized' })
+    }
+  }
+
+  // Check specific permission
   if (to.meta.permission) {
     const hasPermission = authStore.hasPermission(to.meta.permission as string)
 
@@ -230,6 +253,7 @@ router.beforeEach(async (to, from, next) => {
     }
   }
 
+  // Redirect authenticated users from guest pages
   if (to.meta.requiresGuest && isAuthenticated) {
     console.log('ℹ️ Redirecting authenticated user')
     return next(authStore.defaultRoute)
