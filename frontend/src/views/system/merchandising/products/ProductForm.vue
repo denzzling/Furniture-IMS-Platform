@@ -852,6 +852,8 @@ const handleSubmit = async () => {
   }
 }
 
+// In ProductForm2.vue - Update these functions
+
 const upload3DModel = async (productId: number) => {
   if (!form.value.modelFile) return
 
@@ -859,14 +861,22 @@ const upload3DModel = async (productId: number) => {
     const formData = new FormData()
     formData.append('product_id', productId.toString())
     formData.append('asset_type', '3D_Model')
-    formData.append('asset_file', form.value.modelFile)
-    formData.append('is_primary', 'true')
+    formData.append('asset_file', form.value.modelFile) // ✅ Note: asset_file not model_file
+    formData.append('is_primary', '1') // ✅ Use '1' instead of 'true'
     formData.append('model_format', form.value.modelFile.name.split('.').pop()?.toLowerCase() || 'glb')
     formData.append('default_camera_angle_x', form.value.default_camera_angle_x.toString())
     formData.append('default_camera_angle_y', form.value.default_camera_angle_y.toString())
     formData.append('default_zoom_level', form.value.default_zoom_level.toString())
 
-    await merchandisingService.uploadAsset(formData)
+    console.log('Uploading 3D model:', {
+      productId,
+      fileName: form.value.modelFile.name,
+      size: form.value.modelFile.size
+    })
+
+    const response = await merchandisingService.uploadAsset(formData)
+    
+    console.log('3D model upload response:', response)
 
     toast.add({
       severity: 'success',
@@ -874,13 +884,15 @@ const upload3DModel = async (productId: number) => {
       detail: '3D model uploaded successfully',
       life: 3000
     })
-  } catch (error) {
+  } catch (error: any) {
+    console.error('3D model upload error:', error.response || error)
     toast.add({
       severity: 'error',
       summary: 'Error',
-      detail: 'Failed to upload 3D model',
+      detail: error.response?.data?.message || 'Failed to upload 3D model',
       life: 3000
     })
+    throw error // Re-throw to handle in main submit
   }
 }
 
@@ -892,9 +904,11 @@ const uploadImages = async (productId: number) => {
       const formData = new FormData()
       formData.append('product_id', productId.toString())
       formData.append('asset_type', i === 0 ? 'Image_Main' : 'Image_Gallery')
-      formData.append('asset_file', form.value.imageFiles[i])
-      formData.append('is_primary', i === 0 ? 'true' : 'false')
+      formData.append('asset_file', form.value.imageFiles[i]) // ✅ Note: asset_file
+      formData.append('is_primary', i === 0 ? '1' : '0') // ✅ Use '1'/'0'
       formData.append('display_order', i.toString())
+
+      console.log(`Uploading image ${i + 1}/${form.value.imageFiles.length}`)
 
       await merchandisingService.uploadAsset(formData)
     }
@@ -902,16 +916,18 @@ const uploadImages = async (productId: number) => {
     toast.add({
       severity: 'success',
       summary: 'Success',
-      detail: 'Product images uploaded successfully',
+      detail: `${form.value.imageFiles.length} images uploaded successfully`,
       life: 3000
     })
-  } catch (error) {
+  } catch (error: any) {
+    console.error('Image upload error:', error.response || error)
     toast.add({
       severity: 'error',
       summary: 'Error',
-      detail: 'Failed to upload some images',
+      detail: error.response?.data?.message || 'Failed to upload some images',
       life: 3000
     })
+    throw error
   }
 }
 

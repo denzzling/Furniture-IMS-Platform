@@ -556,8 +556,7 @@ import { ref, onMounted, computed, onBeforeUnmount, nextTick, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useToast } from 'primevue/usetoast'
 import * as THREE from 'three'
-
-
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import merchandisingService from '../../../../services/merchandising.service'
@@ -571,7 +570,6 @@ import Column from 'primevue/column'
 import Dialog from 'primevue/dialog'
 import Skeleton from 'primevue/skeleton'
 import ProgressSpinner from 'primevue/progressspinner'
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
 
 const route = useRoute()
 const router = useRouter()

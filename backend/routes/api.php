@@ -1,9 +1,6 @@
 <?php
 
 use App\Http\Controllers\Api\Admin\RolePermissionController;
-use App\Http\Controllers\Api\Hr\AttendanceController;
-use App\Http\Controllers\Api\Ims\Catalog\CategoryController;
-use App\Http\Controllers\Api\Ims\Catalog\ProductController;
 use App\Http\Controllers\Api\Store\StoreVerificationController;
 
 use App\Http\Controllers\Auth\VerifyEmailController;
@@ -20,13 +17,11 @@ use App\Http\Controllers\Api\Store\BranchController;
 
 use App\Http\Controllers\Api\Hr\EmployeeController;
 use App\Http\Controllers\Api\Hr\PayPeriodController;
-use App\Http\Controllers\Api\Hr\ShiftController;
-use App\Http\Controllers\Api\Hr\ShiftScheduleController;
 use App\Http\Controllers\Api\Hr\DeductionTypeController;
-use App\Http\Controllers\Api\Hr\LeaveController;
 use App\Http\Controllers\Api\Hr\PayrollController;
 use App\Http\Controllers\Api\Hr\DepartmentController;
 use App\Http\Controllers\Api\UserNavigationController;
+
 
 // ========== RATE LIMITING ==========
 RateLimiter::for('login', fn(Request $request) => Limit::perMinute(100)->by($request->ip()));
@@ -217,4 +212,4 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
             ]);
         });
     });
-});
+}); // ✅ Also add a public route (if you want unauthenticated access)

@@ -7,10 +7,13 @@ use App\Http\Controllers\Api\ProductCatalog\ProductAssetController;
 use App\Http\Controllers\Api\ProductCatalog\ProductVariationController;
 use App\Http\Controllers\Api\ProductCatalog\TagController;
 use App\Http\Controllers\Api\ProductCatalog\AttributeController;
-
+use App\Http\Controllers\Api\ProductCatalog\DashboardController;
 
 // Product Catalog Routes
 Route::prefix('product-catalog')->group(function () {
+
+    Route::get('dashboard/stats', [DashboardController::class, 'stats']);
+    Route::get('dashboard/activity', [DashboardController::class, 'activityLog']);
 
     // Categories
     Route::apiResource('categories', CategoryController::class);
@@ -31,6 +34,7 @@ Route::prefix('product-catalog')->group(function () {
 
     // Product Assets (3D models, images, etc.)
     Route::prefix('assets')->group(function () {
+        Route::get('/{id}/serve', [ProductAssetController::class, 'serve']);
         Route::get('/', [ProductAssetController::class, 'index']);
         Route::get('/{id}', [ProductAssetController::class, 'show']);
         Route::post('/upload', [ProductAssetController::class, 'store']);

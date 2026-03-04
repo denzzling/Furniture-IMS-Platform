@@ -158,7 +158,16 @@ const routes: RouteRecordRaw[] = [
       { path: 'pricing/bulk-update', name: 'merchandising.pricing.bulk', component: () => import('../views/system/merchandising/pricing/BulkPricing.vue'), meta: { title: 'Bulk Price Update', subtitle: 'Update multiple product prices at once', roles: ['super_admin', 'store_admin', 'store_manager'], permissions: ['merchandising.pricing.update'] } },
       { path: 'reports', name: 'merchandising.reports', component: () => import('../views/system/merchandising/reports/SalesReports.vue'), meta: { title: 'Sales Reports', subtitle: 'Analyze product performance', roles: ['super_admin', 'store_admin', 'store_manager'], permissions: ['merchandising.reports.view'] } },
       { path: 'pricing-history', name: 'merchandising.pricing-history', component: () => import('../views/system/merchandising/reports/PricingHistory.vue'), meta: { title: 'Pricing History', subtitle: 'Track price changes over time', roles: ['super_admin', 'store_admin', 'store_manager'], permissions: ['merchandising.reports.view'] } },
-      { path: '', redirect: { name: 'merchandising.products' } }
+      { path: '', redirect: { name: 'merchandising.products' } },
+        {
+      path: '3d-gallery',
+      name: 'merchandising.3d-gallery',
+      component: () => import('../views/system/merchandising/assets/Gallery3D.vue'),
+      meta: {
+        title: '3D Models Gallery',
+        subtitle: 'Browse all 3D models'
+      }
+    }
     ]
   },
   {

@@ -21,7 +21,7 @@ export interface Product {
     is_new_arrival?: boolean
     is_bestseller?: boolean
     is_active?: boolean
-    stock_status?: string
+    stock_status: string
     meta_title?: string
     meta_description?: string
     published_at?: string
@@ -80,6 +80,15 @@ export interface ProductAsset {
 class MerchandisingService {
     private baseUrl = '/api/product-catalog'
 
+    async getDashboardStats() {
+        const response = await axiosClient.get(`${this.baseUrl}/dashboard/stats`)
+        return response.data
+    }
+    async getActivityLog(params: any) {
+        const response = await axiosClient.get(`${this.baseUrl}/dashboard/activity`, { params })
+        return response.data
+    }
+
     // ==================== PRODUCTS ====================
     async getProducts(params?: any) {
         const response = await axiosClient.get(`${this.baseUrl}/products`, { params })
@@ -134,6 +143,7 @@ class MerchandisingService {
         const response = await axiosClient.get(`${this.baseUrl}/categories/tree/all`)
         return response.data
     }
+
 
     async createCategory(data: Category) {
         const response = await axiosClient.post(`${this.baseUrl}/categories`, data)

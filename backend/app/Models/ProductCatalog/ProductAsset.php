@@ -47,7 +47,7 @@ class ProductAsset extends Model
     protected $appends = ['url', 'thumbnail_url', 'camera_settings'];
 
     /**
-     * ✅ FIXED: Safer URL generation
+     * ✅ Get full URL for the asset
      */
     public function getUrlAttribute()
     {
@@ -55,12 +55,8 @@ class ProductAsset extends Model
             return null;
         }
 
-        // Remove any existing 'storage/' prefix to avoid duplication
-        $cleanPath = ltrim($this->file_path, '/');
-        $cleanPath = preg_replace('#^storage/#', '', $cleanPath);
-
-        // Build the URL
-        return asset("storage/{$cleanPath}");
+        // ✅ Use the serve route instead of direct storage URL
+        return url("/api/product-catalog/assets/{$this->id}/serve");
     }
 
     /**
@@ -96,7 +92,6 @@ class ProductAsset extends Model
     {
         return Storage::disk('public')->exists($this->file_path);
     }
-
 
     // Relationships
     public function store()

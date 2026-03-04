@@ -10,7 +10,7 @@
         label="Back to Assets" 
         icon="pi pi-arrow-left" 
         text 
-        @click="$router.push({ name: 'merchandising.assets' })" 
+        @click="router.push({ name: 'merchandising.assets' })" 
       />
     </div>
 
@@ -339,7 +339,7 @@ const assetTypeOptions = [
     value: '3D_Model',
     label: '3D Model',
     description: 'GLB/GLTF',
-    icon: 'pi pi-cube'
+    icon: 'pi pi-box'
   },
   {
     value: 'Image_Main',

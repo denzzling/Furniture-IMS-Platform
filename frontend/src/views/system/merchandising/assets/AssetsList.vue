@@ -3,19 +3,28 @@
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
       <div>
-        <h2 class="text-2xl font-bold text-gray-800">3D Models & Assets</h2>
-        <p class="text-sm text-gray-500 mt-1">Upload and manage 3D models, images, videos, and documents</p>
+        <h2 class="text-2xl font-bold text-gray-800">Media & Assets</h2>
+        <p class="text-sm text-gray-500 mt-1">Manage images, videos, and documents</p>
       </div>
-      <Button 
-        v-if="authStore.hasPermission('merchandising.assets.upload')"
-        label="Upload Assets" 
-        icon="pi pi-cloud-upload" 
-        @click="$router.push({ name: 'merchandising.assets.upload' })"
-      />
+      <div class="flex gap-2">
+        <Button 
+          label="3D Models Gallery" 
+          icon="pi pi-cube" 
+          severity="info"
+          outlined
+          @click="router.push({ name: 'merchandising.3d-gallery' })"
+        />
+        <Button 
+          v-if="authStore.hasPermission('merchandising.assets.upload')"
+          label="Upload Assets" 
+          icon="pi pi-cloud-upload" 
+          @click="router.push({ name: 'merchandising.assets.upload' })"
+        />
+      </div>
     </div>
 
     <!-- Stats Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
       <Card v-for="stat in assetStats" :key="stat.type" class="hover:shadow-lg transition-shadow">
         <template #content>
           <div class="text-center">
@@ -99,25 +108,11 @@
           <div class="space-y-3">
             <!-- Asset Preview -->
             <div class="relative aspect-video bg-gray-100 rounded-lg overflow-hidden group">
-              <!-- ✅ 3D Model Preview with Three.js -->
-              <div 
-                v-if="asset.asset_type === '3D_Model'" 
-                :ref="el => set3DContainerRef(asset.id, el)"
-                class="w-full h-full bg-gradient-to-br from-blue-50 to-indigo-100"
-              >
-                <!-- Loading indicator for 3D models -->
-                <div v-if="!asset.model_loaded" class="w-full h-full flex items-center justify-center">
-                  <div class="text-center">
-                    <i class="pi pi-spin pi-spinner text-4xl text-indigo-600 mb-2"></i>
-                    <p class="text-xs text-gray-600">Loading 3D model...</p>
-                  </div>
-                </div>
-              </div>
-
+              
               <!-- Image Preview -->
               <img 
-                v-else-if="asset.asset_type.includes('Image')"
-                :src="asset.thumbnail_url || asset.url" 
+                v-if="asset.asset_type.includes('Image')"
+                :src="asset.auth_url || asset.thumbnail_url || asset.url" 
                 :alt="asset.file_name"
                 class="w-full h-full object-cover"
                 @error="handleImageError"
@@ -191,10 +186,147 @@
       </Card>
     </div>
 
-    <!-- List View (keeping existing code) -->
-    <!-- ... rest of your list view code ... -->
+    <!-- List View -->
+    <Card v-else-if="viewMode === 'list' && assets.length > 0">
+      <template #content>
+        <DataTable 
+          :value="assets" 
+          :paginator="true" 
+          :rows="15"
+          :rowsPerPageOptions="[15, 30, 50]"
+          dataKey="id"
+          v-model:selection="selectedAssets"
+          stripedRows
+          class="p-datatable-sm"
+        >
+          <template #empty>
+            <div class="text-center py-12">
+              <i class="pi pi-folder-open text-6xl text-gray-300"></i>
+              <p class="text-gray-600 mt-4">No assets found</p>
+            </div>
+          </template>
 
-    <!-- View Asset Dialog with 3D Viewer -->
+          <Column selectionMode="multiple" headerStyle="width: 3rem"></Column>
+
+          <Column header="Preview" style="width: 100px">
+            <template #body="{ data }">
+              <div class="w-16 h-16 bg-gray-100 rounded flex items-center justify-center overflow-hidden">
+                <img 
+                  v-if="data.asset_type.includes('Image')"
+                  :src="data.auth_url || data.thumbnail_url || data.url" 
+                  class="w-full h-full object-cover rounded"
+                  @error="handleImageError"
+                />
+                <i v-else :class="getAssetIcon(data.asset_type)" class="text-2xl text-gray-600"></i>
+              </div>
+            </template>
+          </Column>
+
+          <Column field="file_name" header="File Name" sortable>
+            <template #body="{ data }">
+              <div>
+                <p class="font-semibold text-gray-900">{{ data.file_name }}</p>
+                <p class="text-xs text-gray-500 mt-1">{{ data.alt_text || 'No description' }}</p>
+              </div>
+            </template>
+          </Column>
+
+          <Column field="asset_type" header="Type" sortable>
+            <template #body="{ data }">
+              <Tag :value="getAssetTypeLabel(data.asset_type)" :severity="getAssetTypeSeverity(data.asset_type)" />
+            </template>
+          </Column>
+
+          <Column field="product.product_name" header="Product" sortable>
+            <template #body="{ data }">
+              <span v-if="data.product" class="text-sm">{{ data.product.product_name }}</span>
+              <span v-else class="text-sm text-gray-400 italic">Unassigned</span>
+            </template>
+          </Column>
+
+          <Column field="file_size_kb" header="Size" sortable>
+            <template #body="{ data }">
+              <span class="text-sm">{{ formatFileSize(data.file_size_kb * 1024) }}</span>
+            </template>
+          </Column>
+
+          <Column field="is_primary" header="Primary">
+            <template #body="{ data }">
+              <Tag v-if="data.is_primary" value="Yes" severity="success" size="small" />
+              <span v-else class="text-sm text-gray-400">No</span>
+            </template>
+          </Column>
+
+          <Column field="created_at" header="Uploaded" sortable>
+            <template #body="{ data }">
+              <span class="text-sm">{{ formatDate(data.created_at) }}</span>
+            </template>
+          </Column>
+
+          <Column header="Actions" :frozen="true" alignFrozen="right">
+            <template #body="{ data }">
+              <div class="flex gap-1">
+                <Button 
+                  icon="pi pi-eye" 
+                  severity="info"
+                  text 
+                  rounded 
+                  size="small"
+                  v-tooltip.top="'View'"
+                  @click="viewAsset(data)"
+                />
+                <Button 
+                  icon="pi pi-download" 
+                  severity="secondary"
+                  text 
+                  rounded 
+                  size="small"
+                  v-tooltip.top="'Download'"
+                  @click="downloadAsset(data)"
+                />
+                <Button 
+                  v-if="authStore.hasPermission('merchandising.assets.delete')"
+                  icon="pi pi-trash" 
+                  severity="danger"
+                  text 
+                  rounded 
+                  size="small"
+                  v-tooltip.top="'Delete'"
+                  @click="confirmDelete(data)"
+                />
+              </div>
+            </template>
+          </Column>
+        </DataTable>
+      </template>
+    </Card>
+
+    <!-- Empty State -->
+    <Card v-else>
+      <template #content>
+        <div class="text-center py-12">
+          <i class="pi pi-cloud-upload text-6xl text-gray-300"></i>
+          <p class="text-gray-600 mt-4 text-lg">No media assets uploaded yet</p>
+          <p class="text-gray-500 text-sm mt-2">Upload images, videos, and documents for your products</p>
+          <div class="flex gap-3 justify-center mt-6">
+            <Button 
+              label="Upload Media Assets" 
+              icon="pi pi-cloud-upload" 
+              @click="$router.push({ name: 'merchandising.assets.upload' })"
+            />
+            <Button 
+              label="View 3D Models" 
+              icon="pi pi-cube" 
+              severity="info"
+              outlined
+              @click="$router.push({ name: 'merchandising.3d-gallery' })"
+            />
+          </div>
+        </div>
+      </template>
+    </Card>
+
+    <!-- View Asset Dialog -->
     <Dialog 
       v-model:visible="viewDialogVisible" 
       :header="currentAsset?.file_name" 
@@ -204,18 +336,11 @@
       <div v-if="currentAsset" class="space-y-4">
         <!-- Asset Preview -->
         <div class="bg-gray-100 rounded-lg p-8 flex items-center justify-center" style="min-height: 500px;">
-          <!-- ✅ 3D Model Viewer in Dialog -->
-          <div 
-            v-if="currentAsset.asset_type === '3D_Model'"
-            ref="dialog3DContainer"
-            class="w-full h-full"
-            style="min-height: 500px;"
-          ></div>
-
+          
           <!-- Image Preview -->
           <img 
-            v-else-if="currentAsset.asset_type.includes('Image')"
-            :src="currentAsset.url" 
+            v-if="currentAsset.asset_type.includes('Image')"
+            :src="currentAsset.auth_url || currentAsset.url" 
             :alt="currentAsset.file_name"
             class="max-w-full max-h-96 object-contain"
           />
@@ -227,6 +352,13 @@
             controls
             class="max-w-full max-h-96"
           ></video>
+
+          <!-- PDF Preview -->
+          <div v-else-if="currentAsset.asset_type === 'Manual_PDF'" class="text-center">
+            <i class="pi pi-file-pdf text-8xl text-red-600 mb-4"></i>
+            <p class="text-gray-600 text-lg font-semibold">{{ currentAsset.file_name }}</p>
+            <p class="text-gray-500 text-sm mt-2">PDF Document</p>
+          </div>
 
           <!-- Other file types -->
           <i v-else :class="getAssetIcon(currentAsset.asset_type)" class="text-8xl text-gray-400"></i>
@@ -250,16 +382,20 @@
             <p class="text-xs text-gray-600 mb-1">Uploaded</p>
             <p class="text-sm font-semibold">{{ formatDate(currentAsset.created_at) }}</p>
           </div>
+          <div class="col-span-2" v-if="currentAsset.alt_text">
+            <p class="text-xs text-gray-600 mb-1">Description</p>
+            <p class="text-sm">{{ currentAsset.alt_text }}</p>
+          </div>
           <div class="col-span-2">
             <p class="text-xs text-gray-600 mb-1">URL</p>
-            <p class="text-sm font-mono text-blue-600 break-all">{{ currentAsset.url }}</p>
+            <p class="text-xs font-mono text-blue-600 break-all">{{ currentAsset.url }}</p>
           </div>
         </div>
       </div>
 
       <template #footer>
         <Button label="Download" icon="pi pi-download" @click="downloadAsset(currentAsset)" />
-        <Button label="Close" severity="secondary" outlined @click="closeViewDialog" />
+        <Button label="Close" severity="secondary" outlined @click="viewDialogVisible = false" />
       </template>
     </Dialog>
 
@@ -281,29 +417,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useToast } from 'primevue/usetoast'
 import { useAuthStore } from '../../../../stores/auth'
 import merchandisingService from '../../../../services/merchandising.service'
-import * as THREE from 'three'
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
-import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader'
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
+import { useRouter } from 'vue-router'
 
-import Card from 'primevue/card'
-import Button from 'primevue/button'
-import InputText from 'primevue/inputtext'
-import Select from 'primevue/select'
-import Checkbox from 'primevue/checkbox'
-import DataTable from 'primevue/datatable'
-import Column from 'primevue/column'
-import Dialog from 'primevue/dialog'
-import Skeleton from 'primevue/skeleton'
-import Tag from 'primevue/tag'
-import Badge from 'primevue/badge'
-import IconField from 'primevue/iconfield'
-import InputIcon from 'primevue/inputicon'
 
+const router = useRouter()
 const toast = useToast()
 const authStore = useAuthStore()
 
@@ -318,19 +439,14 @@ const currentAsset = ref(null)
 const selectedAssets = ref([])
 const searchQuery = ref('')
 const viewMode = ref('grid')
-const dialog3DContainer = ref(null)
-
-// 3D Model state
-const modelContainers = ref<Map<number, HTMLElement>>(new Map())
-const modelScenes = ref<Map<number, any>>(new Map())
 
 const filters = reactive({
   asset_type: null,
   product_id: null
 })
 
+// ✅ Only non-3D asset types
 const assetTypes = [
-  { label: '3D Models', value: '3D_Model' },
   { label: 'Main Images', value: 'Image_Main' },
   { label: 'Gallery Images', value: 'Image_Gallery' },
   { label: 'Videos', value: 'Video_Product' },
@@ -340,15 +456,6 @@ const assetTypes = [
 // Computed
 const assetStats = computed(() => {
   const stats = [
-    {
-      type: '3D_Model',
-      label: '3D Models',
-      icon: 'pi pi-cube',
-      iconColor: 'text-indigo-600',
-      bgColor: 'bg-indigo-100',
-      count: 0,
-      totalSize: 0
-    },
     {
       type: 'Image',
       label: 'Images',
@@ -388,137 +495,69 @@ const assetStats = computed(() => {
   ]
 
   assets.value.forEach((asset: any) => {
-    if (asset.asset_type === '3D_Model') {
+    if (asset.asset_type.includes('Image')) {
       stats[0].count++
       stats[0].totalSize += asset.file_size_kb * 1024
-    } else if (asset.asset_type.includes('Image')) {
+    } else if (asset.asset_type === 'Video_Product') {
       stats[1].count++
       stats[1].totalSize += asset.file_size_kb * 1024
-    } else if (asset.asset_type === 'Video_Product') {
+    } else if (asset.asset_type === 'Manual_PDF') {
       stats[2].count++
       stats[2].totalSize += asset.file_size_kb * 1024
-    } else if (asset.asset_type === 'Manual_PDF') {
-      stats[3].count++
-      stats[3].totalSize += asset.file_size_kb * 1024
     }
   })
 
   return stats
 })
 
-// ✅ 3D Model Methods
-const set3DContainerRef = (assetId: number, el: HTMLElement | null) => {
-  if (el) {
-    modelContainers.value.set(assetId, el)
-    // Load 3D model after container is mounted
-    nextTick(() => {
-      const asset = assets.value.find((a: any) => a.id === assetId)
-      if (asset && asset.asset_type === '3D_Model') {
-        load3DModel(asset, el)
+// ✅ Load images with authentication
+const loadImageWithAuth = async (asset: any) => {
+  if (!asset.url) return null
+
+  try {
+    const token = authStore.token || localStorage.getItem('auth_token')
+    
+    const response = await fetch(asset.url, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'image/*'
       }
     })
-  }
-}
 
-const load3DModel = (asset: any, container: HTMLElement) => {
-  if (!container) return
-
-  const width = container.clientWidth
-  const height = container.clientHeight
-
-  // Create scene
-  const scene = new THREE.Scene()
-  scene.background = new THREE.Color(0xf0f4f8)
-
-  // Create camera
-  const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000)
-  camera.position.set(2, 2, 5)
-
-  // Create renderer
-  const renderer = new THREE.WebGLRenderer({ antialias: true })
-  renderer.setSize(width, height)
-  renderer.shadowMap.enabled = true
-  container.appendChild(renderer.domElement)
-
-  // Add lights
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.6)
-  scene.add(ambientLight)
-
-  const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8)
-  directionalLight.position.set(5, 10, 7.5)
-  directionalLight.castShadow = true
-  scene.add(directionalLight)
-
-  // Add orbit controls
-  const controls = new OrbitControls(camera, renderer.domElement)
-  controls.enableDamping = true
-  controls.dampingFactor = 0.05
-  controls.minDistance = 1
-  controls.maxDistance = 20
-
-  // Load model
-  const loader = asset.model_format === 'obj' ? new OBJLoader() : new GLTFLoader()
-  
-  loader.load(
-    asset.url,
-    (model: any) => {
-      const object = asset.model_format === 'obj' ? model : model.scene
-      
-      // Center the model
-      const box = new THREE.Box3().setFromObject(object)
-      const center = box.getCenter(new THREE.Vector3())
-      object.position.sub(center)
-
-      // Scale to fit
-      const size = box.getSize(new THREE.Vector3())
-      const maxDim = Math.max(size.x, size.y, size.z)
-      const scale = 2 / maxDim
-      object.scale.multiplyScalar(scale)
-
-      scene.add(object)
-      asset.model_loaded = true
-
-      // Animation loop
-      const animate = () => {
-        requestAnimationFrame(animate)
-        controls.update()
-        renderer.render(scene, camera)
-      }
-      animate()
-    },
-    (progress: any) => {
-      console.log('Loading:', (progress.loaded / progress.total * 100).toFixed(2) + '%')
-    },
-    (error: any) => {
-      console.error('Error loading 3D model:', error)
-      asset.model_loaded = false
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`)
     }
-  )
 
-  // Store scene for cleanup
-  modelScenes.value.set(asset.id, { scene, renderer, controls })
-}
-
-const load3DModelInDialog = () => {
-  if (!dialog3DContainer.value || !currentAsset.value) return
-  
-  setTimeout(() => {
-    load3DModel(currentAsset.value, dialog3DContainer.value)
-  }, 100)
+    const blob = await response.blob()
+    return URL.createObjectURL(blob)
+  } catch (error) {
+    console.error('Failed to load image:', error)
+    return null
+  }
 }
 
 // Methods
 const loadAssets = async () => {
   loading.value = true
   try {
-    const params: any = { ...filters }
+    const params: any = { 
+      ...filters,
+      // ✅ Exclude 3D models from this list
+      exclude_type: '3D_Model'
+    }
     if (searchQuery.value) params.search = searchQuery.value
 
     const response = await merchandisingService.getAssets(params)
-    assets.value = response.data.data.map((asset: any) => ({
-      ...asset,
-      model_loaded: false
-    }))
+    
+    // ✅ Filter out 3D models on frontend as backup
+    assets.value = response.data.data.filter((asset: any) => asset.asset_type !== '3D_Model')
+    
+    // ✅ Load images with auth
+    for (const asset of assets.value) {
+      if (asset.asset_type.includes('Image')) {
+        asset.auth_url = await loadImageWithAuth(asset)
+      }
+    }
   } catch (error) {
     toast.add({
       severity: 'error',
@@ -548,27 +587,15 @@ const toggleViewMode = () => {
   viewMode.value = viewMode.value === 'grid' ? 'list' : 'grid'
 }
 
-const viewAsset = (asset: any) => {
-  currentAsset.value = asset
+const viewAsset = async (asset: any) => {
+  currentAsset.value = { ...asset }
+  
+  // ✅ Load auth URL for dialog if not already loaded
+  if (asset.asset_type.includes('Image') && !asset.auth_url) {
+    currentAsset.value.auth_url = await loadImageWithAuth(asset)
+  }
+  
   viewDialogVisible.value = true
-  
-  if (asset.asset_type === '3D_Model') {
-    nextTick(() => {
-      load3DModelInDialog()
-    })
-  }
-}
-
-const closeViewDialog = () => {
-  // Cleanup 3D scene
-  if (currentAsset.value?.asset_type === '3D_Model' && dialog3DContainer.value) {
-    while (dialog3DContainer.value.firstChild) {
-      dialog3DContainer.value.removeChild(dialog3DContainer.value.firstChild)
-    }
-  }
-  
-  viewDialogVisible.value = false
-  currentAsset.value = null
 }
 
 const downloadAsset = (asset: any) => {
@@ -639,12 +666,11 @@ const bulkDeleteAssets = async () => {
 
 const handleImageError = (event: Event) => {
   const img = event.target as HTMLImageElement
-  img.src = '/placeholder-image.png' // Add a placeholder image
+  img.src = '/placeholder-image.png'
 }
 
 const getAssetTypeLabel = (type: string) => {
   const labels: Record<string, string> = {
-    '3D_Model': '3D Model',
     'Image_Main': 'Main Image',
     'Image_Gallery': 'Gallery',
     'Video_Product': 'Video',
@@ -655,7 +681,6 @@ const getAssetTypeLabel = (type: string) => {
 
 const getAssetTypeSeverity = (type: string) => {
   const severities: Record<string, string> = {
-    '3D_Model': 'info',
     'Image_Main': 'success',
     'Image_Gallery': 'primary',
     'Video_Product': 'warning',
@@ -666,7 +691,6 @@ const getAssetTypeSeverity = (type: string) => {
 
 const getAssetIcon = (type: string) => {
   const icons: Record<string, string> = {
-    '3D_Model': 'pi pi-cube',
     'Image_Main': 'pi pi-image',
     'Image_Gallery': 'pi pi-images',
     'Video_Product': 'pi pi-video',
@@ -692,16 +716,6 @@ const formatDate = (date: string) => {
   })
 }
 
-// Cleanup on unmount
-onBeforeUnmount(() => {
-  modelScenes.value.forEach((sceneData) => {
-    sceneData.renderer.dispose()
-    sceneData.controls.dispose()
-  })
-  modelScenes.value.clear()
-  modelContainers.value.clear()
-})
-
 onMounted(() => {
   loadProducts()
   loadAssets()
@@ -711,12 +725,5 @@ onMounted(() => {
 <style scoped>
 .aspect-video {
   aspect-ratio: 16 / 9;
-}
-
-/* Ensure 3D containers have proper sizing */
-:deep(canvas) {
-  display: block;
-  max-width: 100%;
-  max-height: 100%;
 }
 </style>
