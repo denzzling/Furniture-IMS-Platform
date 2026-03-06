@@ -23,6 +23,12 @@ importers:
       '@types/three':
         specifier: ^0.183.1
         version: 0.183.1
+      '@vuelidate/core':
+        specifier: ^2.0.3
+        version: 2.0.3(vue@3.5.26(typescript@5.9.3))
+      '@vuelidate/validators':
+        specifier: ^2.0.4
+        version: 2.0.4(vue@3.5.26(typescript@5.9.3))
       axios:
         specifier: ^1.13.2
         version: 1.13.2
@@ -605,6 +611,24 @@ packages:
       vue:
         optional: true
 
+  '@vuelidate/core@2.0.3':
+    resolution: {integrity: sha512-AN6l7KF7+mEfyWG0doT96z+47ljwPpZfi9/JrNMkOGLFv27XVZvKzRLXlmDPQjPl/wOB1GNnHuc54jlCLRNqGA==}
+    peerDependencies:
+      '@vue/composition-api': ^1.0.0-rc.1
+      vue: ^2.0.0 || >=3.0.0
+    peerDependenciesMeta:
+      '@vue/composition-api':
+        optional: true
+
+  '@vuelidate/validators@2.0.4':
+    resolution: {integrity: sha512-odTxtUZ2JpwwiQ10t0QWYJkkYrfd0SyFYhdHH44QQ1jDatlZgTh/KRzrWVmn/ib9Gq7H4hFD4e8ahoo5YlUlDw==}
+    peerDependencies:
+      '@vue/composition-api': ^1.0.0-rc.1
+      vue: ^2.0.0 || >=3.0.0
+    peerDependenciesMeta:
+      '@vue/composition-api':
+        optional: true
+
   '@webgpu/types@0.1.69':
     resolution: {integrity: sha512-RPmm6kgRbI8e98zSD3RVACvnuktIja5+yLgDAkTmxLr90BEwdTXRQWNLF3ETTTyH/8mKhznZuN5AveXYFEsMGQ==}
 
@@ -976,6 +1000,17 @@ packages:
 
   vscode-uri@3.1.0:
     resolution: {integrity: sha512-/BpdSx+yCQGnCvecbyXdxHDkuk55/G3xwnC0GqY4gmQ3j+A+g8kzzgB4Nk/SINjqn6+waqw3EgbVF2QKExkRxQ==}
+
+  vue-demi@0.13.11:
+    resolution: {integrity: sha512-IR8HoEEGM65YY3ZJYAjMlKygDQn25D5ajNFNoKh9RSDMQtlzCxtfQjdQgv9jjK+m3377SsJXY8ysq8kLCZL25A==}
+    engines: {node: '>=12'}
+    hasBin: true
+    peerDependencies:
+      '@vue/composition-api': ^1.0.0-rc.1
+      vue: ^3.0.0-0 || ^2.6.0
+    peerDependenciesMeta:
+      '@vue/composition-api':
+        optional: true
 
   vue-tsc@3.2.1:
     resolution: {integrity: sha512-I23Rk8dkQfmcSbxDO0dmg9ioMLjKA1pjlU3Lz6Jfk2pMGu3Uryu9810XkcZH24IzPbhzPCnkKo2rEMRX0skSrw==}
@@ -1415,6 +1450,16 @@ snapshots:
       typescript: 5.9.3
       vue: 3.5.26(typescript@5.9.3)
 
+  '@vuelidate/core@2.0.3(vue@3.5.26(typescript@5.9.3))':
+    dependencies:
+      vue: 3.5.26(typescript@5.9.3)
+      vue-demi: 0.13.11(vue@3.5.26(typescript@5.9.3))
+
+  '@vuelidate/validators@2.0.4(vue@3.5.26(typescript@5.9.3))':
+    dependencies:
+      vue: 3.5.26(typescript@5.9.3)
+      vue-demi: 0.13.11(vue@3.5.26(typescript@5.9.3))
+
   '@webgpu/types@0.1.69': {}
 
   alien-signals@3.1.2: {}
@@ -1746,6 +1791,10 @@ snapshots:
       lightningcss: 1.30.2
 
   vscode-uri@3.1.0: {}
+
+  vue-demi@0.13.11(vue@3.5.26(typescript@5.9.3)):
+    dependencies:
+      vue: 3.5.26(typescript@5.9.3)
 
   vue-tsc@3.2.1(typescript@5.9.3):
     dependencies:

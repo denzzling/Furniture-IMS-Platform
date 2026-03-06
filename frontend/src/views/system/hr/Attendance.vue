@@ -51,7 +51,7 @@
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
       <DataTable :value="attendanceData" class="w-full text-sm" :loading="loading" paginator :rows="10"
         :rowsPerPageOptions="[5, 10, 20, 50]"
-        paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown"
+        paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageSelect"
         currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries" rowHover showGridlines
         responsiveLayout="scroll">
         <Column field="attendanceDateRaw" header="Date" sortable style="width: 120px">
@@ -476,12 +476,12 @@ const transformAttendance = (item: any): any => {
         : 'Unknown',
       department: employee.department || 'N/A'
     },
-    clockIn: formatTime24(item.clock_in),
+    clockIn: formatTime(item.clock_in),
     clockInRaw: item.clock_in,
-    clockInTime: formatTime24(item.clock_in),
-    clockOut: formatTime24(item.clock_out),
+    clockInTime: formatTime(item.clock_in),
+    clockOut: formatTime(item.clock_out),
     clockOutRaw: item.clock_out,
-    clockOutTime: formatTime24(item.clock_out),
+    clockOutTime: formatTime(item.clock_out),
     isLate: item.status === 'late',
     lateMinutes: item.late_minutes || 0,
     breakMinutes: item.break_minutes || 0,

@@ -22,9 +22,6 @@
           <Select v-model="filters.category_id" :options="categories" optionLabel="category_name" optionValue="id"
             placeholder="All Categories" class="w-full" showClear @change="onFilterChange" />
   
-          <Select v-model="filters.stock_status" :options="stockStatuses" placeholder="Stock Status" class="w-full"
-            showClear @change="onFilterChange" />
-  
           <Select v-model="filters.is_active" :options="activeStatuses" optionLabel="label" optionValue="value"
             placeholder="Status" class="w-full" showClear @change="onFilterChange" />
         </div>
@@ -89,12 +86,6 @@
                   ₱{{ formatPrice(data.discounted_price) }}
                 </p>
               </div>
-            </template>
-          </Column>
-  
-          <Column field="stock_status" header="Stock" sortable>
-            <template #body="{ data }">
-              <Tag :value="data.stock_status" :severity="getStockSeverity(data.stock_status)" />
             </template>
           </Column>
   
@@ -170,15 +161,12 @@ const currentProduct = ref(null)
 const filters = reactive({
   search: '',
   category_id: null,
-  stock_status: null,
   is_active: null,
   page: 1,
   per_page: 15,
   sort_by: 'created_at',
   sort_order: 'desc'
 })
-
-const stockStatuses = ['In Stock', 'Low Stock', 'Out of Stock', 'Pre-order']
 const activeStatuses = [
   { label: 'Active', value: true },
   { label: 'Inactive', value: false }
@@ -245,7 +233,6 @@ const onFilterChange = () => {
 const resetFilters = () => {
   filters.search = ''
   filters.category_id = null
-  filters.stock_status = null
   filters.is_active = null
   loadProducts()
 }
@@ -312,16 +299,6 @@ const bulkDeactivate = async () => {
 
 const formatPrice = (price: number) => {
   return new Intl.NumberFormat('en-PH', { minimumFractionDigits: 2 }).format(price)
-}
-
-const getStockSeverity = (status: string) => {
-  switch (status) {
-    case 'In Stock': return 'success'
-    case 'Low Stock': return 'warning'
-    case 'Out of Stock': return 'danger'
-    case 'Pre-order': return 'info'
-    default: return 'secondary'
-  }
 }
 
 onMounted(() => {

@@ -82,7 +82,16 @@
       <!-- Financial Columns -->
       <Column class="text-xs" field="baseSalary" header="Base Salary" sortable>
         <template #body="{ data }">
-          {{ formatCurrency(data.baseSalary) }}
+          <InputNumber
+            size="small"
+            fluid
+            v-model="data.baseSalary"
+            mode="currency"
+            currency="PHP"
+            locale="en-PH"
+            :min="0"
+            @blur="recalculateTotals(data)"
+          />
         </template>
       </Column>
 
@@ -95,13 +104,31 @@
       <!-- Earnings -->
       <Column class="text-xs" field="basicPay" header="Basic Pay" sortable>
         <template #body="{ data }">
-          {{ formatCurrency(data.basicPay) }}
+          <InputNumber
+            size="small"
+            fluid
+            v-model="data.basicPay"
+            mode="currency"
+            currency="PHP"
+            locale="en-PH"
+            :min="0"
+            @blur="recalculateTotals(data)"
+          />
         </template>
       </Column>
 
       <Column class="text-xs" field="overtimePay" header="OT Pay" sortable>
         <template #body="{ data }">
-          {{ formatCurrency(data.overtimePay) }}
+          <InputNumber
+            size="small"
+            fluid
+            v-model="data.overtimePay"
+            mode="currency"
+            currency="PHP"
+            locale="en-PH"
+            :min="0"
+            @blur="recalculateTotals(data)"
+          />
         </template>
       </Column>
 
@@ -121,13 +148,61 @@
       </Column>
 
       <!-- Deductions -->
-      <Column class="text-xs font-semibold" header="Gov't Deductions">
+      <Column class="text-xs font-semibold" header="Gov't Deductions" style="min-width: 180px">
         <template #body="{ data }">
-          <div class="text-xs">
-            <div>Tax: {{ formatCurrency(data.governmentDeductions.tax) }}</div>
-            <div>SSS: {{ formatCurrency(data.governmentDeductions.sss) }}</div>
-            <div>PhilHealth: {{ formatCurrency(data.governmentDeductions.philhealth) }}</div>
-            <div>Pag-IBIG: {{ formatCurrency(data.governmentDeductions.pagibig) }}</div>
+          <div class="text-xs space-y-1">
+            <div class="flex items-center gap-1">
+              <span class="w-16">Tax:</span>
+              <InputNumber
+                size="small"
+                fluid
+                v-model="data.governmentDeductions.tax"
+                mode="currency"
+                currency="PHP"
+                locale="en-PH"
+                :min="0"
+                @blur="recalculateTotals(data)"
+              />
+            </div>
+            <div class="flex items-center gap-1">
+              <span class="w-16">SSS:</span>
+              <InputNumber
+                size="small"
+                fluid
+                v-model="data.governmentDeductions.sss"
+                mode="currency"
+                currency="PHP"
+                locale="en-PH"
+                :min="0"
+                @blur="recalculateTotals(data)"
+              />
+            </div>
+            <div class="flex items-center gap-1">
+              <span class="w-16">PhilHealth:</span>
+              <InputNumber
+                size="small"
+                fluid
+                v-model="data.governmentDeductions.philhealth"
+                mode="currency"
+                currency="PHP"
+                locale="en-PH"
+                :min="0"
+                @blur="recalculateTotals(data)"
+              />
+            </div>
+            <div class="flex items-center gap-1">
+              <span class="w-16">Pag-IBIG:</span>
+              <InputNumber
+                size="small"
+                fluid
+                v-model="data.governmentDeductions.pagibig"
+                mode="currency"
+                currency="PHP"
+                locale="en-PH"
+                :min="0"
+                @blur="recalculateTotals(data)"
+              />
+            </div>
           </div>
         </template>
       </Column>

@@ -15,9 +15,12 @@ use Database\Seeders\Hr\PayrollItemsSeeder;
 use Database\Seeders\Hr\PayrollSeeder;
 use Database\Seeders\Hr\ShiftScheduleSeeder;
 use Database\Seeders\Hr\ShiftSeeder;
-use Database\Seeders\Permission\MerchandisingPermissionsSeeder;
-use Database\Seeders\Permission\NavigationItemsSeeder;
-use Database\Seeders\Permission\RolePermissionSeeder;
+use Database\Seeders\Permission\Inventory\InventoryNavigationSeeder;
+use Database\Seeders\Permission\Inventory\InventoryPermissionsSeeder;
+use Database\Seeders\Permission\Inventory\InventoryRolePermissionsSeeder;
+use Database\Seeders\Permission\Merchandise\MerchandisingPermissionsSeeder;
+use Database\Seeders\Permission\Merchandise\NavigationItemsSeeder;
+use Database\Seeders\Permission\Merchandise\RolePermissionSeeder;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -45,9 +48,12 @@ class DatabaseSeeder extends Seeder
             // LeaveBalanceSeeder::class,
             // DepartmentSeeder::class,
             // EmployeeDeductionsSeeder::class
-            MerchandisingPermissionsSeeder::class,
-            RolePermissionSeeder::class,
-            NavigationItemsSeeder::class,
+            // MerchandisingPermissionsSeeder::class,
+            // RolePermissionSeeder::class,
+            // NavigationItemsSeeder::class,
+            // InventoryPermissionsSeeder::class,
+            InventoryRolePermissionsSeeder::class,
+            InventoryNavigationSeeder::class,
         ]);
     }
 }

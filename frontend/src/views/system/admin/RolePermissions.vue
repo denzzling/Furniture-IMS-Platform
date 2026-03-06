@@ -249,9 +249,9 @@
               class="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg">
               <div class="flex-1">
                 <div class="flex items-center gap-2">
-                  <code class="text-sm bg-gray-100 px-2 py-1 rounded">{{ permission.name }}</code>
+                  <code class="text-sm bg-gray-100 px-2 py-1 rounded">{{ permission.display_name }}</code>
                 </div>
-                <p class="text-sm text-gray-600 mt-1">{{ permission.display_name }}</p>
+                <p class="text-sm text-gray-600 mt-1">{{ permission.name}}</p>
                 <p class="text-xs text-gray-500">{{ permission.description }}</p>
               </div>
               <Checkbox v-model="selectedRolePermissions" :value="permission.id" />

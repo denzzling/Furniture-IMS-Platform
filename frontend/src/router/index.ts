@@ -2,6 +2,7 @@ import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import HumanResourcesLayout from '../layouts/HumanResourcesLayout.vue'
 import { useAuthStore } from '../stores/auth'
 import InventoryLayout from '../layouts/InventoryLayout.vue'
+import inventoryRoutes from './modules/inventory'
 
 // Lazy load components for better performance
 const Home = () => import('../views/marketing/Home.vue')
@@ -137,55 +138,38 @@ const routes: RouteRecordRaw[] = [
     component: () => import('../layouts/MerchandisingLayout.vue'),
     meta: { requiresAuth: true, roles: ['super_admin', 'store_admin', 'store_manager', 'warehouse_manager', 'inventory_staff', 'sales_staff', 'supplier_coordinator'] },
     children: [
-      { path: 'dashboard', name: 'merchandising.dashboard', component: () => import('../views/system/merchandising/Dashboard.vue'), meta: { title: 'Product Catalog Dashboard', subtitle: 'Overview of your product catalog and inventory', roles: ['super_admin', 'store_admin', 'store_manager', 'warehouse_manager'], permissions: ['merchandising.dashboard.view'] } },
-      { path: 'products', name: 'merchandising.products', component: () => import('../views/system/merchandising/products/ProductsList.vue'), meta: { title: 'All Products', subtitle: 'Manage your furniture product catalog', roles: ['super_admin', 'store_admin', 'store_manager', 'warehouse_manager', 'inventory_staff', 'sales_staff', 'supplier_coordinator'], permissions: ['merchandising.products.view'] } },
-      { path: 'products/new', name: 'merchandising.products.create', component: () => import('../views/system/merchandising/products/ProductForm.vue'), meta: { title: 'Add New Product', subtitle: 'Create a new furniture product', roles: ['super_admin', 'store_admin', 'store_manager'], permissions: ['merchandising.products.create'] } },
-      { path: 'products/:id/edit', name: 'merchandising.products.edit', component: () => import('../views/system/merchandising/products/ProductForm.vue'), meta: { title: 'Edit Product', subtitle: 'Update product information', roles: ['super_admin', 'store_admin', 'store_manager'], permissions: ['merchandising.products.update'] } },
-      { path: 'products/:id', name: 'merchandising.products.view', component: () => import('../views/system/merchandising/products/ProductView.vue'), meta: { title: 'Product Details', subtitle: 'View detailed product information and 3D model', roles: ['super_admin', 'store_admin', 'store_manager', 'warehouse_manager', 'inventory_staff', 'sales_staff', 'supplier_coordinator'], permissions: ['merchandising.products.read'] } },
-      { path: 'variations', name: 'merchandising.variations', component: () => import('../views/system/merchandising/variations/VariationsList.vue'), meta: { title: 'Product Variations', subtitle: 'Manage colors, sizes, and materials', roles: ['super_admin', 'store_admin', 'store_manager', 'warehouse_manager', 'sales_staff'], permissions: ['merchandising.variations.view'] } },
-      { path: 'variations/new', name: 'merchandising.variations.create', component: () => import('../views/system/merchandising/variations/VariationForm.vue'), meta: { title: 'Add New Variation', subtitle: 'Create a new product variation', roles: ['super_admin', 'store_admin', 'store_manager'], permissions: ['merchandising.variations.create'] } },
-      { path: 'variations/:id/edit', name: 'merchandising.variations.edit', component: () => import('../views/system/merchandising/variations/VariationForm.vue'), meta: { title: 'Edit Variation', subtitle: 'Update variation details', roles: ['super_admin', 'store_admin', 'store_manager'], permissions: ['merchandising.variations.update'] } },
-      { path: 'assets', name: 'merchandising.assets', component: () => import('../views/system/merchandising/assets/AssetsList.vue'), meta: { title: '3D Models & Assets', subtitle: 'Upload and manage 3D models, images, and videos', roles: ['super_admin', 'store_admin', 'store_manager', 'sales_staff'], permissions: ['merchandising.assets.view'] } },
-      { path: 'assets/upload', name: 'merchandising.assets.upload', component: () => import('../views/system/merchandising/assets/AssetUpload.vue'), meta: { title: 'Upload Asset', subtitle: 'Upload new 3D model or image', roles: ['super_admin', 'store_admin', 'store_manager'], permissions: ['merchandising.assets.create'] } },
-      { path: 'inventory', name: 'merchandising.inventory', component: () => import('../views/system/merchandising/inventory/InventoryList.vue'), meta: { title: 'Inventory Status', subtitle: 'Monitor stock levels across all products', roles: ['super_admin', 'store_admin', 'store_manager', 'warehouse_manager', 'inventory_staff', 'supplier_coordinator'], permissions: ['merchandising.inventory.view'] } },
-      { path: 'categories', name: 'merchandising.categories', component: () => import('../views/system/merchandising/categories/CategoriesList.vue'), meta: { title: 'Product Categories', subtitle: 'Organize your furniture catalog', roles: ['super_admin', 'store_admin', 'store_manager'], permissions: ['merchandising.categories.view'] } },
-      { path: 'categories/new', name: 'merchandising.categories.create', component: () => import('../views/system/merchandising/categories/CategoryForm.vue'), meta: { title: 'Add Category', subtitle: 'Create a new product category', roles: ['super_admin', 'store_admin', 'store_manager'], permissions: ['merchandising.categories.create'] } },
-      { path: 'categories/:id/edit', name: 'merchandising.categories.edit', component: () => import('../views/system/merchandising/categories/CategoryForm.vue'), meta: { title: 'Edit Category', subtitle: 'Update category information', roles: ['super_admin', 'store_admin', 'store_manager'], permissions: ['merchandising.categories.update'] } },
-      { path: 'attributes', name: 'merchandising.attributes', component: () => import('../views/system/merchandising/attributes/AttributesList.vue'), meta: { title: 'Product Attributes', subtitle: 'Define filterable product characteristics', roles: ['super_admin', 'store_admin', 'store_manager'], permissions: ['merchandising.attributes.view'] } },
-      { path: 'attributes/new', name: 'merchandising.attributes.create', component: () => import('../views/system/merchandising/attributes/AttributeForm.vue'), meta: { title: 'Add Attribute', subtitle: 'Create a new product attribute', roles: ['super_admin', 'store_admin', 'store_manager'], permissions: ['merchandising.attributes.create'] } },
-      { path: 'tags', name: 'merchandising.tags', component: () => import('../views/system/merchandising/tags/TagsList.vue'), meta: { title: 'Tags & Collections', subtitle: 'Manage product tags and collections', roles: ['super_admin', 'store_admin', 'store_manager'], permissions: ['merchandising.tags.view'] } },
-      { path: 'pricing', name: 'merchandising.pricing', component: () => import('../views/system/merchandising/pricing/PricingRules.vue'), meta: { title: 'Pricing Rules', subtitle: 'Set discounts and pricing strategies', roles: ['super_admin', 'store_admin', 'store_manager'], permissions: ['merchandising.pricing.view'] } },
-      { path: 'pricing/bulk-update', name: 'merchandising.pricing.bulk', component: () => import('../views/system/merchandising/pricing/BulkPricing.vue'), meta: { title: 'Bulk Price Update', subtitle: 'Update multiple product prices at once', roles: ['super_admin', 'store_admin', 'store_manager'], permissions: ['merchandising.pricing.update'] } },
-      { path: 'reports', name: 'merchandising.reports', component: () => import('../views/system/merchandising/reports/SalesReports.vue'), meta: { title: 'Sales Reports', subtitle: 'Analyze product performance', roles: ['super_admin', 'store_admin', 'store_manager'], permissions: ['merchandising.reports.view'] } },
-      { path: 'pricing-history', name: 'merchandising.pricing-history', component: () => import('../views/system/merchandising/reports/PricingHistory.vue'), meta: { title: 'Pricing History', subtitle: 'Track price changes over time', roles: ['super_admin', 'store_admin', 'store_manager'], permissions: ['merchandising.reports.view'] } },
+      { path: 'dashboard', name: 'merchandising.dashboard', component: () => import('../views/system/merchandising/Dashboard.vue'), meta: { title: 'Product Catalog Dashboard', subtitle: 'Overview of your product catalog and inventory', permissions: ['merchandising.dashboard.view'] } },
+      { path: 'products', name: 'merchandising.products', component: () => import('../views/system/merchandising/products/ProductsList.vue'), meta: { title: 'All Products', subtitle: 'Manage your furniture product catalog', permissions: ['merchandising.products.view'] } },
+      { path: 'products/new', name: 'merchandising.products.create', component: () => import('../views/system/merchandising/products/ProductForm.vue'), meta: { title: 'Add New Product', subtitle: 'Create a new furniture product', permissions: ['merchandising.products.create'] } },
+      { path: 'products/:id/edit', name: 'merchandising.products.edit', component: () => import('../views/system/merchandising/products/ProductForm.vue'), meta: { title: 'Edit Product', subtitle: 'Update product information', permissions: ['merchandising.products.update'] } },
+      { path: 'products/:id', name: 'merchandising.products.view', component: () => import('../views/system/merchandising/products/ProductView.vue'), meta: { title: 'Product Details', subtitle: 'View detailed product information and 3D model', permissions: ['merchandising.products.read'] } },
+      { path: 'variations', name: 'merchandising.variations', component: () => import('../views/system/merchandising/variations/VariationsList.vue'), meta: { title: 'Product Variations', subtitle: 'Manage colors, sizes, and materials', permissions: ['merchandising.variations.view'] } },
+      { path: 'variations/new', name: 'merchandising.variations.create', component: () => import('../views/system/merchandising/variations/VariationForm.vue'), meta: { title: 'Add New Variation', subtitle: 'Create a new product variation', permissions: ['merchandising.variations.create'] } },
+      { path: 'variations/:id/edit', name: 'merchandising.variations.edit', component: () => import('../views/system/merchandising/variations/VariationForm.vue'), meta: { title: 'Edit Variation', subtitle: 'Update variation details', permissions: ['merchandising.variations.update'] } },
+      { path: 'assets', name: 'merchandising.assets', component: () => import('../views/system/merchandising/assets/AssetsList.vue'), meta: { title: '3D Models & Assets', subtitle: 'Upload and manage 3D models, images, and videos', permissions: ['merchandising.assets.view'] } },
+      { path: 'assets/upload', name: 'merchandising.assets.upload', component: () => import('../views/system/merchandising/assets/AssetUpload.vue'), meta: { title: 'Upload Asset', subtitle: 'Upload new 3D model or image', permissions: ['merchandising.assets.create'] } },
+      { path: '3d-gallery', name: 'merchandising.3d-gallery', component: () => import('../views/system/merchandising/assets/Gallery3D.vue'), meta: { title: '3D Models Gallery', subtitle: 'Browse all 3D models' } },
+      { path: 'inventory', name: 'merchandising.inventory', component: () => import('../views/system/merchandising/inventory/InventoryList.vue'), meta: { title: 'Inventory Status', subtitle: 'Monitor stock levels across all products', permissions: ['merchandising.inventory.view'] } },
+      { path: 'categories', name: 'merchandising.categories', component: () => import('../views/system/merchandising/categories/CategoriesList.vue'), meta: { title: 'Product Categories', subtitle: 'Organize your furniture catalog', permissions: ['merchandising.categories.view'] } },
+      { path: 'categories/new', name: 'merchandising.categories.create', component: () => import('../views/system/merchandising/categories/CategoryForm.vue'), meta: { title: 'Add Category', subtitle: 'Create a new product category', permissions: ['merchandising.categories.create'] } },
+      { path: 'categories/:id/edit', name: 'merchandising.categories.edit', component: () => import('../views/system/merchandising/categories/CategoryForm.vue'), meta: { title: 'Edit Category', subtitle: 'Update category information', permissions: ['merchandising.categories.update'] } },
+      { path: 'attributes', name: 'merchandising.attributes', component: () => import('../views/system/merchandising/attributes/AttributesList.vue'), meta: { title: 'Product Attributes', subtitle: 'Define filterable product characteristics', permissions: ['merchandising.attributes.view'] } },
+      { path: 'attributes/new', name: 'merchandising.attributes.create', component: () => import('../views/system/merchandising/attributes/AttributeForm.vue'), meta: { title: 'Add Attribute', subtitle: 'Create a new product attribute', permissions: ['merchandising.attributes.create'] } },
+      { path: 'tags', name: 'merchandising.tags', component: () => import('../views/system/merchandising/tags/TagsList.vue'), meta: { title: 'Tags & Collections', subtitle: 'Manage product tags and collections', permissions: ['merchandising.tags.view'] } },
+      { path: 'pricing', name: 'merchandising.pricing', component: () => import('../views/system/merchandising/pricing/PricingRules.vue'), meta: { title: 'Pricing Rules', subtitle: 'Set discounts and pricing strategies', permissions: ['merchandising.pricing.view'] } },
+      { path: 'pricing/bulk-update', name: 'merchandising.pricing.bulk', component: () => import('../views/system/merchandising/pricing/BulkPricing.vue'), meta: { title: 'Bulk Price Update', subtitle: 'Update multiple product prices at once', permissions: ['merchandising.pricing.update'] } },
+      { path: 'reports', name: 'merchandising.reports', component: () => import('../views/system/merchandising/reports/SalesReports.vue'), meta: { title: 'Sales Reports', subtitle: 'Analyze product performance', permissions: ['merchandising.reports.view'] } },
+      { path: 'pricing-history', name: 'merchandising.pricing-history', component: () => import('../views/system/merchandising/reports/PricingHistory.vue'), meta: { title: 'Pricing History', subtitle: 'Track price changes over time', permissions: ['merchandising.reports.view'] } },
       { path: '', redirect: { name: 'merchandising.products' } },
-        {
-      path: '3d-gallery',
-      name: 'merchandising.3d-gallery',
-      component: () => import('../views/system/merchandising/assets/Gallery3D.vue'),
-      meta: {
-        title: '3D Models Gallery',
-        subtitle: 'Browse all 3D models'
-      }
-    }
     ]
   },
-  {
-    path: '/inventory',
-    component: InventoryLayout,
-    children: []
-  },
+  ...inventoryRoutes,
   {
     path: '/unauthorized',
     name: 'Unauthorized',
     component: Unauthorized,
     meta: { requiresAuth: false }
   },
-  // {
-  //   path: '/reset',
-  //   name: 'Reset',
-  //   component: () => import('../views/auth/Reset.vue')
-  // },
   { path: '/dashboard', redirect: '/system' }
 ]
 
@@ -230,7 +214,7 @@ router.beforeEach(async (to, from, next) => {
     const requiredRoles = to.meta.role || to.meta.roles
     const userRole = authStore.userRole
 
-    const hasRole = Array.isArray(requiredRoles) 
+    const hasRole = Array.isArray(requiredRoles)
       ? requiredRoles.includes(userRole)
       : requiredRoles === userRole
 

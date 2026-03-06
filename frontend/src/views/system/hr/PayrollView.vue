@@ -666,6 +666,18 @@ const printPayslip = (item: PayrollItem) => {
         <div style="border-top:1px solid #333; padding-top:4px; text-align:center;">Prepared by</div>
         <div style="border-top:1px solid #333; padding-top:4px; text-align:center;">Received by</div>
       </div>
+
+      <div style="margin-top:30px; text-align:center; font-size:10px; color:#999;">
+        Printed on: ${new Date().toLocaleString('en-PH', { 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric', 
+          hour: '2-digit', 
+          minute: '2-digit', 
+          second: '2-digit',
+          hour12: true 
+        })}
+      </div>
     </body>
     </html>
   `

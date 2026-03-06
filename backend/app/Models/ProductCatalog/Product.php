@@ -168,22 +168,4 @@ class Product extends Model
                     ->whereIn('asset_type', ['3D_Model', '3D_Thumbnail'])
                     ->get();
     }
-
-    // Methods
-    public function updateStockStatus()
-    {
-        $totalStock = $this->variations()->sum('stock_quantity');
-        
-        if ($totalStock <= 0) {
-            $this->stock_status = 'Out of Stock';
-        } elseif ($totalStock < 10) {
-            $this->stock_status = 'Low Stock';
-        } else {
-            $this->stock_status = 'In Stock';
-        }
-        
-        $this->saveQuietly();
-        
-        return $this->stock_status;
-    }
 }

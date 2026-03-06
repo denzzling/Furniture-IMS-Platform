@@ -63,7 +63,6 @@ export interface ProductVariation {
     size?: string
     material?: string
     price_adjustment: number
-    stock_quantity: number
     custom_3d_model_id?: number
     is_active?: boolean
 }

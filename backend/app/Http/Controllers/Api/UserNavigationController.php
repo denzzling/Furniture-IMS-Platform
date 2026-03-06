@@ -160,12 +160,6 @@ class UserNavigationController extends Controller
         // For example, show count of pending approvals, new items, etc.
         
         switch ($navItem->name) {
-            case 'merchandising.inventory':
-                // Count low stock items
-                return DB::table('product_variations')
-                    ->where('stock_quantity', '<=', 10)
-                    ->count();
-                
             case 'merchandising.products':
                 // Count inactive products
                 return DB::table('products')

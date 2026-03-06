@@ -17,16 +17,12 @@ class MerchandisingController extends Controller
         $stats = [
             'totalProducts' => Product::where('store_id', $storeId)->count(),
             'totalCategories' => Category::where('store_id', $storeId)->count(),
-            'lowStockItems' => Product::where('store_id', $storeId)
-                ->whereColumn('stock_quantity', '<=', 'min_stock_level')
-                ->count(),
             'totalValue' => Product::where('store_id', $storeId)
-                ->sum(DB::raw('price * stock_quantity')),
+                ->sum(DB::raw('price')),
             'topCategories' => Category::where('categories.store_id', $storeId)
                 ->leftJoin('products', 'categories.id', '=', 'products.category_id')
                 ->select('categories.id', 'categories.name')
                 ->selectRaw('COUNT(products.id) as count')
-                ->selectRaw('SUM(products.price * products.stock_quantity) as value')
                 ->groupBy('categories.id', 'categories.name')
                 ->orderByDesc('value')
                 ->limit(4)
@@ -36,10 +32,6 @@ class MerchandisingController extends Controller
                 ->latest()
                 ->limit(5)
                 ->get(),
-            'lowStockProducts' => Product::where('store_id', $storeId)
-                ->whereColumn('stock_quantity', '<=', 'min_stock_level')
-                ->limit(5)
-                ->get()
         ];
         
         return response()->json(['data' => $stats]);

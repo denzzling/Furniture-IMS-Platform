@@ -83,7 +83,6 @@ class ProductVariationController extends BaseController
                 'size' => 'nullable|string|max:50',
                 'material' => 'nullable|string|max:100',
                 'price_adjustment' => 'required|numeric',
-                'stock_quantity' => 'required|integer|min:0',
                 'custom_3d_model_id' => 'nullable|exists:product_assets,id',
                 'is_active' => 'boolean'
             ]);
@@ -221,7 +220,6 @@ class ProductVariationController extends BaseController
                 'size' => 'nullable|string|max:50',
                 'material' => 'nullable|string|max:100',
                 'price_adjustment' => 'sometimes|numeric',
-                'stock_quantity' => 'sometimes|integer|min:0',
                 'custom_3d_model_id' => 'nullable|exists:product_assets,id',
                 'is_active' => 'boolean',
                 'price_change_reason' => 'required_if:price_adjustment,changed|string|nullable'
@@ -373,67 +371,6 @@ class ProductVariationController extends BaseController
             
             return $this->errorResponse(
                 'Failed to retrieve variations: ' . $e->getMessage(),
-                500,
-                [],
-                $e
-            );
-        }
-    }
-
-    /**
-     * Bulk update stock quantities.
-     */
-    public function bulkUpdateStock(Request $request)
-    {
-        try {
-            $validated = $this->validateRequest($request, [
-                'variations' => 'required|array',
-                'variations.*.id' => 'required|exists:product_variations,id',
-                'variations.*.stock_quantity' => 'required|integer|min:0'
-            ]);
-
-            DB::beginTransaction();
-
-            try {
-                $updated = 0;
-
-                foreach ($validated['variations'] as $item) {
-                    $variation = ProductVariation::byStore($this->getStoreId())->find($item['id']);
-                    
-                    if ($variation) {
-                        $variation->update(['stock_quantity' => $item['stock_quantity']]);
-                        $updated++;
-                    }
-                }
-
-                DB::commit();
-
-                return $this->successResponse(
-                    ['updated_count' => $updated],
-                    'Stock quantities updated successfully'
-                );
-
-            } catch (\Exception $e) {
-                DB::rollBack();
-                throw $e;
-            }
-
-        } catch (ValidationException $e) {
-            return $this->errorResponse(
-                'Validation error',
-                422,
-                $e->errors()
-            );
-        } catch (\Exception $e) {
-            Log::error('Failed to bulk update stock', [
-                'store_id' => $this->getStoreId(),
-                'user_id' => $this->getUserId(),
-                'data' => $request->all(),
-                'error' => $e->getMessage()
-            ]);
-            
-            return $this->errorResponse(
-                'Failed to update stock: ' . $e->getMessage(),
                 500,
                 [],
                 $e

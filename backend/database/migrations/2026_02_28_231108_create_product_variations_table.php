@@ -24,7 +24,6 @@ return new class extends Migration
             
             // Pricing and stock
             $table->decimal('price_adjustment', 10, 2)->default(0);
-            $table->integer('stock_quantity')->default(0);
             
             // Link to specific 3D model
             $table->foreignId('custom_3d_model_id')->nullable()->constrained('product_assets');

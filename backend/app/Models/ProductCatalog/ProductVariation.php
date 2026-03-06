@@ -23,14 +23,12 @@ class ProductVariation extends Model
         'size',
         'material',
         'price_adjustment',
-        'stock_quantity',
         'custom_3d_model_id',
         'is_active'
     ];
 
     protected $casts = [
         'price_adjustment' => 'decimal:2',
-        'stock_quantity' => 'integer',
         'is_active' => 'boolean'
     ];
 
@@ -65,12 +63,6 @@ class ProductVariation extends Model
     {
         return $query->where('store_id', $storeId);
     }
-
-    public function scopeInStock($query)
-    {
-        return $query->where('stock_quantity', '>', 0);
-    }
-
     // Accessors
     public function getFinalPriceAttribute()
     {

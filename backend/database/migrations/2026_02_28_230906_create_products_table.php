@@ -35,7 +35,6 @@ return new class extends Migration
             $table->boolean('is_new_arrival')->default(false);
             $table->boolean('is_bestseller')->default(false);
             $table->boolean('is_active')->default(true);
-            $table->enum('stock_status', ['In Stock', 'Low Stock', 'Out of Stock', 'Pre-order'])->default('In Stock');
             
             // SEO
             $table->string('meta_title')->nullable();
