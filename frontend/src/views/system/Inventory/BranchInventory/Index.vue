@@ -117,7 +117,7 @@
 
     <!-- Inventory Table -->
     <InventoryTable
-      :loading="loading"
+      :branch-id="filters.branchId || undefined"
       @edit="editInventory"
       @delete="deleteInventory"
       @view-transactions="viewTransactions"
@@ -137,7 +137,7 @@ import { useInventoryPermissions } from '../../../../composables/Inventory/useIn
 
 const router = useRouter();
 const toast = useToast();
-const { branches, fetchInventory } = useInventory();
+const { branches, fetchInventory, fetchBranches } = useInventory();
 const { canCreate } = useInventoryPermissions();
 
 // Refs
@@ -157,7 +157,7 @@ const summaryStats = ref({
 
 // Breadcrumb
 const breadcrumbItems = [
-  { label: 'Branch Inventory', to: '/inventory/branch' },
+  { label: 'Branch Inventory', to: 'api/inventory/branch' },
 ];
 
 // Stock status options
@@ -177,8 +177,10 @@ let searchDebounce: NodeJS.Timeout;
 const loadData = async (): Promise<void> => {
   loading.value = true;
   try {
-    await fetchInventory(filters.value);
-    await loadSummaryStats();
+    await Promise.all([
+      fetchBranches(),
+      loadSummaryStats()
+    ]);
   } catch (error) {
     console.error('Failed to load inventory:', error);
   } finally {

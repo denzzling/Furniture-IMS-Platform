@@ -1,6 +1,6 @@
 // frontend/src/composables/procurement/useProcurementPermissions.ts
 import { computed } from 'vue';
-import { useAuthStore } from '@/stores/auth';
+import { useAuthStore } from '../../stores/auth';
 
 export function useProcurementPermissions() {
   const authStore = useAuthStore();

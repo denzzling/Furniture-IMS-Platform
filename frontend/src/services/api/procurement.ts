@@ -1,5 +1,5 @@
 // frontend/src/services/api/procurement.ts
-import axios from '@/axios';
+import axios from 'axios';
 import type {
   Supplier,
   PurchaseRequisition,
@@ -10,7 +10,7 @@ import type {
   SupplierPayment,
   SupplierPerformance,
   ProcurementDashboardStats
-} from '@/types/procurement';
+} from '../../types/procurement';
 
 // ==================== SUPPLIERS ====================
 export const supplierApi = {

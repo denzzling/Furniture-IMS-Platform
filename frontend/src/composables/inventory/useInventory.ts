@@ -19,6 +19,7 @@ export function useInventory() {
   const currentItem = ref<BranchInventory | null>(null);
   const summary = ref<InventorySummary | null>(null);
   const lowStockItems = ref<BranchInventory[]>([]);
+  const branches = ref<any[]>([]);
   const loading = ref(false);
   const error = ref<string | null>(null);
 
@@ -50,6 +51,27 @@ export function useInventory() {
     const end = Math.min(currentPage.value * perPage.value, totalItems.value);
     return { start, end, total: totalItems.value };
   });
+
+  /**
+   * Fetch branches
+   */
+  const fetchBranches = async () => {
+    try {
+      const response = await inventoryApi.getBranches();
+      
+      if (response.data.success) {
+        branches.value = response.data.data;
+      }
+    } catch (err: any) {
+      console.error('Failed to fetch branches:', err);
+      toast.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'Failed to fetch branches',
+        life: 3000,
+      });
+    }
+  };
 
   /**
    * Fetch inventory items for a branch
@@ -387,6 +409,7 @@ export function useInventory() {
     currentItem,
     summary,
     lowStockItems,
+    branches,
     loading,
     error,
     
@@ -405,6 +428,7 @@ export function useInventory() {
     isEmpty,
     
     // Methods
+    fetchBranches,
     fetchInventory,
     fetchSummary,
     fetchLowStock,

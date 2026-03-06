@@ -5,10 +5,33 @@ namespace App\Http\Controllers\Api\Store;
 use App\Http\Controllers\Controller;
 use App\Models\Store\Branch;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class BranchController extends Controller
 {
-    public function index() {}
+    public function index()
+    {
+        try {
+            $user = Auth::user();
+            
+            // Get branches for the user's store
+            $branches = Branch::where('store_id', $user->store_id)
+                ->select('id', 'branch_name', 'branch_code', 'address', 'status', 'contact_number')
+                ->orderBy('branch_name')
+                ->get();
+            
+            return response()->json([
+                'success' => true,
+                'data' => $branches
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch branches',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 
     public function store(Request $request)
     {

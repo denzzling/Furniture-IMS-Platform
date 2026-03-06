@@ -1,4 +1,5 @@
 <?php
+// backend/app/Http/Controllers/Api/Inventory/DashboardController.php
 
 namespace App\Http\Controllers\Api\Inventory;
 
@@ -27,7 +28,6 @@ class DashboardController extends Controller
         $branchId = $request->branch_id;
         $dateRange = $request->date_range ?? 'month';
         
-        // Get date range
         $startDate = $this->getStartDate($dateRange);
         $endDate = now();
 
@@ -105,7 +105,8 @@ class DashboardController extends Controller
             $transactionsQuery->where('branch_id', $branchId);
         }
 
-        $recentTransactions = $transactionsQuery->with(['product', 'branch', 'created_by_user'])
+        $recentTransactions = $transactionsQuery
+            ->with(['product', 'branch', 'createdBy'])
             ->get();
 
         // Get top moving products
@@ -132,12 +133,12 @@ class DashboardController extends Controller
             ->get();
 
         // Get stock value by category
-        $valueByCategory = BranchInventory::join('products', 'branch_inventories.product_id', '=', 'products.id')
+        $valueByCategory = BranchInventory::join('products', 'branch_inventory.product_id', '=', 'products.id')
             ->join('categories', 'products.category_id', '=', 'categories.id')
             ->select('categories.category_name')
-            ->selectRaw('SUM(branch_inventories.total_value) as total_value')
-            ->selectRaw('SUM(branch_inventories.quantity_on_hand) as total_quantity')
-            ->when($branchId, fn($q) => $q->where('branch_inventories.branch_id', $branchId))
+            ->selectRaw('SUM(branch_inventory.total_value) as total_value')
+            ->selectRaw('SUM(branch_inventory.quantity_on_hand) as total_quantity')
+            ->when($branchId, fn($q) => $q->where('branch_inventory.branch_id', $branchId))
             ->groupBy('categories.id', 'categories.category_name')
             ->orderByDesc('total_value')
             ->limit(10)

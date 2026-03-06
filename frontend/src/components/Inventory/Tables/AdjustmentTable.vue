@@ -285,9 +285,11 @@ import ConfirmDialog from 'primevue/confirmdialog';
 import Skeleton from 'primevue/skeleton';
 import ProgressSpinner from 'primevue/progressspinner';
 
-import { useStockAdjustment } from '@/composables/inventory/useStockAdjustment';
-import { useInventoryPermissions } from '@/composables/inventory/useInventoryPermissions';
-import type { StockAdjustment } from '@/types/inventory';
+import { useStockAdjustment } from '../../../composables/inventory/useStockAdjustment';
+import { useInventoryPermissions } from '../../../composables/inventory/useInventoryPermissions';
+import type { StockAdjustment } from '../../../types/inventory';
+
+
 
 /**
  * Props interface for AdjustmentTable component

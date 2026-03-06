@@ -19,13 +19,22 @@ import type {
 
 
 export const inventoryApi = {
+  // ==================== BRANCHES ====================
+  
+  /**
+   * Get all branches
+   */
+  getBranches(storeId: number) {
+    return axios.get<ApiResponse<any[]>>(`/api/stores/${1}/branches`);
+  },
+
   // ==================== BRANCH INVENTORY ====================
   
   /**
    * Get inventory for branch
    */
   getBranchInventory(branchId: number, filters?: InventoryFilters) {
-    return axios.get<PaginatedResponse<BranchInventory>>(`/inventory/branch/${branchId}`, { 
+    return axios.get<PaginatedResponse<BranchInventory>>(`api/inventory/branch/${branchId}`, { 
       params: filters 
     });
   },
@@ -34,14 +43,14 @@ export const inventoryApi = {
    * Get inventory summary for branch
    */
   getInventorySummary(branchId: number) {
-    return axios.get<ApiResponse<InventorySummary>>(`/inventory/branch/${branchId}/summary`);
+    return axios.get<ApiResponse<InventorySummary>>(`/api/inventory/branch/${branchId}/summary`);
   },
   
   /**
    * Get low stock items for branch
    */
   getLowStock(branchId: number) {
-    return axios.get<ApiResponse<BranchInventory[]>>(`/inventory/branch/${branchId}/low-stock`);
+    return axios.get<ApiResponse<BranchInventory[]>>(`/api/inventory/branch/${branchId}/low-stock`);
   },
   
   /**

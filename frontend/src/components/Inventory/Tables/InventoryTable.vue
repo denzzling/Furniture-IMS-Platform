@@ -271,7 +271,7 @@ import type { BranchInventory } from '../../../types/inventory';
  * Props interface for InventoryTable component
  */
 interface Props {
-  branchId: number;
+  branchId?: number;
   filters?: {
     search?: string;
     stock_status?: string;
@@ -413,7 +413,9 @@ const handleDelete = async (id: number): Promise<void> => {
       detail: 'Inventory record deleted successfully',
       life: 3000,
     });
-    await fetchInventory(props.branchId, props.filters);
+    if (props.branchId) {
+      await fetchInventory(props.branchId, props.filters);
+    }
   } catch (error: any) {
     toast.add({
       severity: 'error',
@@ -453,7 +455,9 @@ const exportCSV = (): void => {
  * Fetch inventory data on component mount
  */
 onMounted(async () => {
-  await fetchInventory(props.branchId, props.filters);
+  if (props.branchId) {
+    await fetchInventory(props.branchId, props.filters);
+  }
 });
 
 /**
@@ -462,7 +466,9 @@ onMounted(async () => {
 watch(
   () => props.filters,
   async (newFilters) => {
-    await fetchInventory(props.branchId, newFilters);
+    if (props.branchId) {
+      await fetchInventory(props.branchId, newFilters);
+    }
   },
   { deep: true }
 );
@@ -473,7 +479,9 @@ watch(
 watch(
   () => props.branchId,
   async (newBranchId) => {
-    await fetchInventory(newBranchId, props.filters);
+    if (newBranchId) {
+      await fetchInventory(newBranchId, props.filters);
+    }
   }
 );
 </script>

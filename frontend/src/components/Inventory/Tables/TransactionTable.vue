@@ -312,9 +312,9 @@ import Avatar from 'primevue/avatar';
 import Skeleton from 'primevue/skeleton';
 import ProgressSpinner from 'primevue/progressspinner';
 
-import { inventoryApi } from '@/services/api/inventory';
-import TransactionTypeIcon from '@/components/Inventory/Widgets/TransactionTypeIcon.vue';
-import type { InventoryTransaction } from '@/types/inventory';
+import type { InventoryTransaction } from '../../../types/inventory';
+import inventoryApi from '../../../services/api/inventory';
+import TransactionTypeIcon from '../Widgets/TransactionTypeIcon.vue';
 
 /**
  * Props interface for TransactionTable component
