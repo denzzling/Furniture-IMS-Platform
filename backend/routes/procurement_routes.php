@@ -27,6 +27,7 @@ use App\Http\Controllers\Api\Procurement\Receiving\GoodsReceiptController;
 use App\Http\Controllers\Api\Procurement\Config\ProcurementSettingsController;
 use App\Http\Controllers\Api\Procurement\Config\RoleApprovalLimitController;
 use App\Http\Controllers\Api\Procurement\DashboardController as ProcurementDashboardController;
+use App\Http\Controllers\Api\Store\BranchController;
 
 /*
 |--------------------------------------------------------------------------
@@ -39,17 +40,18 @@ use App\Http\Controllers\Api\Procurement\DashboardController as ProcurementDashb
 // INVENTORY MANAGEMENT ROUTES
 // ============================================
 Route::prefix('inventory')->group(function () {
-    
+
     Route::prefix('dashboard')->group(function () {
         Route::get('/stats', [DashboardController::class, 'getStats']);
         Route::get('/summary-cards', [DashboardController::class, 'getSummaryCards']);
     });
 
     // Branch Inventory
+    Route::get('/branches', [BranchController::class, 'index']);
     Route::prefix('branch/{branchId}')->group(function () {
         Route::get('/', [BranchInventoryController::class, 'index']);
         Route::get('/summary', [BranchInventoryController::class, 'summary']);
-        Route::get('/low-stock', [BranchInventoryController::class, 'lowStock']);
+        Route::get('/low-stock', action: [BranchInventoryController::class, 'lowStock']);
     });
 
     Route::prefix('items')->group(function () {
@@ -63,12 +65,12 @@ Route::prefix('inventory')->group(function () {
     // Inventory Transactions
     Route::prefix('transactions')->group(function () {
         Route::get('/', [InventoryTransactionController::class, 'index']);
-        Route::get('/{id}', [InventoryTransactionController::class, 'show']);
         Route::get('/summary', [InventoryTransactionController::class, 'summary']);
         Route::get('/product/{productId}', [InventoryTransactionController::class, 'productHistory']);
         Route::get('/export', [InventoryTransactionController::class, 'export']);
         Route::get('/chart', [InventoryTransactionController::class, 'chartData']);
         Route::get('/recent', [InventoryTransactionController::class, 'recent']);
+        Route::get('/{id}', [InventoryTransactionController::class, 'show']);
     });
 
     // Stock Adjustments

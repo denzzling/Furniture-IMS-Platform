@@ -175,16 +175,6 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
             Route::delete('/', 'destroy');
             Route::put('/', 'update');
 
-            // Store Branches
-            Route::prefix('branches')->controller(BranchController::class)->group(function () {
-                Route::get('/', 'index');
-                Route::post('/', 'store');
-                Route::get('{branch}', 'show');
-                Route::put('{branch}', 'update');
-                Route::delete('{branch}', 'destroy');
-            });
-
-
             // Store Verification
             Route::prefix('verification')->group(function () {
                 Route::post('submit', [StoreVerificationController::class, 'submitDocuments']);
@@ -197,6 +187,15 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
             // Store Assignment
             Route::post('assign', [UserController::class, 'assignToStore'])->middleware('role:admin');
         });
+    });
+
+    // Store Branches
+    Route::prefix('branches')->controller(BranchController::class)->group(function () {
+        Route::get('/', 'index');
+        Route::post('/', 'store');
+        Route::get('{branch}', 'show');
+        Route::put('{branch}', 'update');
+        Route::delete('{branch}', 'destroy');
     });
 
     require __DIR__ . '/attendance_routes.php';

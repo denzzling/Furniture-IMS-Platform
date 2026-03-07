@@ -65,7 +65,7 @@ class InventoryTransactionController extends Controller
      * Show single transaction
      * GET /api/inventory/transactions/{id}
      */
-    public function show(int $id): JsonResponse
+    public function show($id): JsonResponse
     {
         $transaction = InventoryTransaction::with([
             'branch',
