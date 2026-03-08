@@ -105,7 +105,7 @@ class StockAdjustmentController extends Controller
             // Create items
             foreach ($validated['items'] as $item) {
                 $difference = $item['actual_quantity'] - $item['system_quantity'];
-                
+
                 // Get unit cost from inventory
                 $inventory = BranchInventory::where('branch_id', $validated['branch_id'])
                     ->where('product_id', $item['product_id'])
@@ -135,7 +135,6 @@ class StockAdjustmentController extends Controller
                 'message' => 'Stock adjustment created successfully',
                 'data' => $adjustment->load('items.product'),
             ], 201);
-
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([
@@ -176,7 +175,6 @@ class StockAdjustmentController extends Controller
                 'message' => 'Stock adjustment approved and applied successfully',
                 'data' => $adjustment->fresh(['items.product']),
             ]);
-
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([
@@ -245,7 +243,6 @@ class StockAdjustmentController extends Controller
                     'message' => 'Stock adjustment auto-approved and applied successfully',
                     'data' => $adjustment->fresh(['items.product']),
                 ]);
-
             } catch (\Exception $e) {
                 DB::rollBack();
                 return response()->json([
@@ -277,7 +274,7 @@ class StockAdjustmentController extends Controller
                 ->firstOrFail();
 
             $quantityBefore = $inventory->quantity_on_hand;
-            
+
             // Update inventory
             $inventory->quantity_on_hand = $item->actual_quantity;
             $inventory->quantity_available = $item->actual_quantity - $inventory->quantity_reserved;
@@ -315,9 +312,9 @@ class StockAdjustmentController extends Controller
         $adjustment->update(['status' => 'applied']);
     }
 
-    private function userHasPermissions(array $permissions): bool
+    protected function userHasPermissions(array $permissions, $user = null): bool
     {
-        $user = auth()->user();
+        $user = $user ?? auth()->user();
         if (!$user || !$user->role_id) {
             return false;
         }

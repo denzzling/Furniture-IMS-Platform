@@ -62,8 +62,7 @@
                 <div class="flex-1">
                     <div class="flex items-center gap-3">
                         <!-- Menu button for ALL screens - visible on all devices -->
-                        <Button icon="pi pi-bars" text rounded @click="toggleSidebar" class="mr-1 menu-button"
-                            v-tooltip.top="sidebarOpen ? 'Close menu (Ctrl+B)' : 'Open menu (Ctrl+B)'" />
+                        
     
                         <div>
                             <h1 class="text-xl font-semibold text-gray-800">
@@ -79,8 +78,7 @@
                 <!-- Header Actions -->
                 <div class="flex items-center space-x-4">
                     <!-- Notifications Bell -->
-                    <NotificationBell v-if="canViewNotifications" />
-
+                    <NotificationBell v-if="canViewNotifications"
                         :badge="alertCount > 0 ? alertCount.toString() : undefined" badgeSeverity="danger"
                         @click="navigateToAlerts" />
     

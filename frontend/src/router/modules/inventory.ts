@@ -18,7 +18,7 @@ const inventoryRoutes: RouteRecordRaw[] = [
       {
         path: 'dashboard',
         name: 'inventory.dashboard',
-        component: () => import('../../views/system/inventory/Dashboard.vue'),
+        component: () => import('../../views/system/inventory/InventoryDashboard.vue'),
         meta: {
           title: 'Inventory Dashboard',
           permission: 'inventory.dashboard.view',
@@ -35,7 +35,7 @@ const inventoryRoutes: RouteRecordRaw[] = [
       {
         path: 'items',
         name: 'inventory.items',
-        component: () => import('../../views/system/inventory/Items/Index.vue'),
+        component: () => import('../../views/system/inventory/Items/ItemsIndex.vue'),
         meta: {
           title: 'Branch Inventory',
           permission: 'inventory.items.view',
@@ -50,7 +50,7 @@ const inventoryRoutes: RouteRecordRaw[] = [
       {
         path: 'adjustments',
         name: 'inventory.adjustments',
-        component: () => import('../../views/system/inventory/Adjustments/Index.vue'),
+        component: () => import('../../views/system/inventory/Adjustments/AdjustmentIndex.vue'),
         meta: {
           title: 'Stock Adjustments',
           permission: 'inventory.adjustments.view',
@@ -63,7 +63,7 @@ const inventoryRoutes: RouteRecordRaw[] = [
       {
         path: 'adjustments/create',
         name: 'inventory.adjustments.create',
-        component: () => import('../../views/system/inventory/Adjustments/Create.vue'),
+        component: () => import('../../views/system/inventory/Adjustments/AdjustmentCreate.vue'),
         meta: {
           title: 'Create Stock Adjustment',
           permission: 'inventory.adjustments.create',
@@ -77,7 +77,7 @@ const inventoryRoutes: RouteRecordRaw[] = [
       {
         path: 'adjustments/:id',
         name: 'inventory.adjustments.detail',
-        component: () => import('../../views/system/inventory/Adjustments/Detail.vue'),
+        component: () => import('../../views/system/inventory/Adjustments/AdjustmentDetail.vue'),
         meta: {
           title: 'Adjustment Details',
           permission: 'inventory.adjustments.view',
@@ -93,7 +93,7 @@ const inventoryRoutes: RouteRecordRaw[] = [
       {
         path: 'transfers',
         name: 'inventory.transfers',
-        component: () => import('../../views/system/inventory/Transfers/Index.vue'),
+        component: () => import('../../views/system/inventory/Transfers/TransferIndex.vue'),
         meta: {
           title: 'Stock Transfers',
           permission: 'inventory.transfers.view',
@@ -106,7 +106,7 @@ const inventoryRoutes: RouteRecordRaw[] = [
       {
         path: 'transfers/create',
         name: 'inventory.transfers.create',
-        component: () => import('../../views/system/inventory/Transfers/Create.vue'),
+        component: () => import('../../views/system/inventory/Transfers/TransferCreate.vue'),
         meta: {
           title: 'Create Stock Transfer',
           permission: 'inventory.transfers.create',
@@ -120,7 +120,7 @@ const inventoryRoutes: RouteRecordRaw[] = [
       {
         path: 'transfers/:id',
         name: 'inventory.transfers.detail',
-        component: () => import('../../views/system/inventory/Transfers/Detail.vue'),
+        component: () => import('../../views/system/inventory/Transfers/TransferDetail.vue'),
         meta: {
           title: 'Transfer Details',
           permission: 'inventory.transfers.view',
@@ -136,7 +136,7 @@ const inventoryRoutes: RouteRecordRaw[] = [
       {
         path: 'alerts',
         name: 'inventory.alerts',
-        component: () => import('../../views/system/inventory/Alerts/Index.vue'),
+        component: () => import('../../views/system/inventory/Alerts/AlertsIndex.vue'),
         meta: {
           title: 'Stock Alerts',
           permission: 'inventory.alerts.view',
@@ -150,7 +150,7 @@ const inventoryRoutes: RouteRecordRaw[] = [
       {
         path: 'transactions',
         name: 'inventory.transactions',
-        component: () => import('../../views/system/inventory/Transactions/Index.vue'),
+        component: () => import('../../views/system/inventory/Transactions/TransactionIndex.vue'),
         meta: {
           title: 'Inventory Transactions',
           permission: 'inventory.transactions.view',
@@ -165,7 +165,7 @@ const inventoryRoutes: RouteRecordRaw[] = [
       {
         path: 'reports',
         name: 'inventory.reports',
-        component: () => import('../../views/system/inventory/Reports/Index.vue'),
+        component: () => import('../../views/system/inventory/Reports/ReportsIndex.vue'),
         meta: {
           title: 'Inventory Reports',
           permission: 'inventory.reports.view',
@@ -180,7 +180,7 @@ const inventoryRoutes: RouteRecordRaw[] = [
       {
         path: 'notifications',
         name: 'inventory.notifications',
-        component: () => import('../../views/system/inventory/Notifications/Index.vue'),
+        component: () => import('../../views/system/inventory/Notifications/NotificationIndex.vue'),
         meta: {
           title: 'Notifications',
           permission: 'inventory.notifications.view',
@@ -195,7 +195,7 @@ const inventoryRoutes: RouteRecordRaw[] = [
       {
         path: 'configuration',
         name: 'inventory.configuration',
-        component: () => import('../../views/system/inventory/Configuration/Index.vue'),
+        component: () => import('../../views/system/inventory/Configuration/ConfigIndex.vue'),
         meta: {
           title: 'Inventory Configuration',
           permission: 'inventory.configuration.manage',

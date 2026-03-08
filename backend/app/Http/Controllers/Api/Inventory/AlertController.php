@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api\Inventory;
 
 use App\Http\Controllers\Controller;
-use App\Models\StockAlert;
+use App\Models\Inventory\StockAlert;
 use App\Services\Inventory\AlertService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
