@@ -12,6 +12,10 @@ use App\Http\Controllers\Api\Inventory\InventoryTransactionController;
 use App\Http\Controllers\Api\Inventory\StockAdjustmentController;
 use App\Http\Controllers\Api\Inventory\StockTransferController;
 use App\Http\Controllers\Api\Inventory\StockAlertController;
+use App\Http\Controllers\Api\Inventory\NotificationController;
+use App\Http\Controllers\Api\Inventory\AlertController;
+use App\Http\Controllers\Api\Inventory\InventoryConfigurationController;
+use App\Http\Controllers\Api\Inventory\InventoryReportController;
 
 // ============================================
 // PROCUREMENT ROUTES
@@ -44,6 +48,48 @@ Route::prefix('inventory')->group(function () {
     Route::prefix('dashboard')->group(function () {
         Route::get('/stats', [DashboardController::class, 'getStats']);
         Route::get('/summary-cards', [DashboardController::class, 'getSummaryCards']);
+        Route::get('/', [DashboardController::class, 'getUserDashboard']);
+    });
+
+    // Notifications
+    Route::prefix('notifications')->group(function () {
+        Route::get('/', [NotificationController::class, 'index']);
+        Route::get('/unread', [NotificationController::class, 'getUnread']);
+        Route::get('/{id}', [NotificationController::class, 'show']);
+        Route::put('/{id}/read', [NotificationController::class, 'markAsRead']);
+        Route::put('/mark-all-read', [NotificationController::class, 'markAllAsRead']);
+        Route::delete('/{id}', [NotificationController::class, 'delete']);
+        Route::post('/batch-delete', [NotificationController::class, 'batchDelete']);
+    });
+
+    // Enhanced Alerts (new AlertController)
+    Route::prefix('alert-management')->group(function () {
+        Route::get('/', [AlertController::class, 'index']);
+        Route::get('/active', [AlertController::class, 'getActive']);
+        Route::get('/by-type', [AlertController::class, 'getByType']);
+        Route::get('/statistics', [AlertController::class, 'statistics']);
+        Route::get('/{id}', [AlertController::class, 'show']);
+        Route::post('/{id}/acknowledge', [AlertController::class, 'acknowledge']);
+        Route::post('/{id}/resolve', [AlertController::class, 'resolve']);
+    });
+
+    // Configuration
+    Route::prefix('configuration')->group(function () {
+        Route::get('/', [InventoryConfigurationController::class, 'show']);
+        Route::put('/', [InventoryConfigurationController::class, 'update']);
+        Route::get('/schema', [InventoryConfigurationController::class, 'schema']);
+    });
+
+    // Reports
+    Route::prefix('reports')->group(function () {
+        Route::get('/branch-summary', [InventoryReportController::class, 'branchSummary']);
+        Route::get('/store-summary', [InventoryReportController::class, 'storeSummary']);
+        Route::get('/movements', [InventoryReportController::class, 'movements']);
+        Route::get('/value-by-category', [InventoryReportController::class, 'valueByCategory']);
+        Route::get('/slow-movers', [InventoryReportController::class, 'slowMovers']);
+        Route::get('/fast-movers', [InventoryReportController::class, 'fastMovers']);
+        Route::get('/transfers', [InventoryReportController::class, 'transfers']);
+        Route::get('/aging', [InventoryReportController::class, 'aging']);
     });
 
     // Branch Inventory

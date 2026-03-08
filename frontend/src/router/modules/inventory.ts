@@ -175,6 +175,36 @@ const inventoryRoutes: RouteRecordRaw[] = [
           ],
         },
       },
+
+      // ==================== NOTIFICATIONS ====================
+      {
+        path: 'notifications',
+        name: 'inventory.notifications',
+        component: () => import('../../views/system/inventory/Notifications/Index.vue'),
+        meta: {
+          title: 'Notifications',
+          permission: 'inventory.notifications.view',
+          breadcrumb: [
+            { label: 'Inventory', to: '/inventory' },
+            { label: 'Notifications' },
+          ],
+        },
+      },
+
+      // ==================== CONFIGURATION ====================
+      {
+        path: 'configuration',
+        name: 'inventory.configuration',
+        component: () => import('../../views/system/inventory/Configuration/Index.vue'),
+        meta: {
+          title: 'Inventory Configuration',
+          permission: 'inventory.configuration.manage',
+          breadcrumb: [
+            { label: 'Inventory', to: '/inventory' },
+            { label: 'Configuration' },
+          ],
+        },
+      },
     ],
   },
 ];

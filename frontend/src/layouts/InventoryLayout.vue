@@ -78,8 +78,9 @@
     
                 <!-- Header Actions -->
                 <div class="flex items-center space-x-4">
-                    <!-- Stock Alerts -->
-                    <Button v-if="canViewAlerts" icon="pi pi-bell" severity="danger" text rounded
+                    <!-- Notifications Bell -->
+                    <NotificationBell v-if="canViewNotifications" />
+
                         :badge="alertCount > 0 ? alertCount.toString() : undefined" badgeSeverity="danger"
                         @click="navigateToAlerts" />
     
@@ -148,6 +149,7 @@ import Menu from 'primevue/menu'
 import { useAuthStore } from '../stores/auth'
 import inventoryService from '../services/inventory.service'
 import UserDialog from '../components/dialogs/UserDialog.vue'
+import NotificationBell from '../components/Inventory/NotificationBell.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -186,6 +188,7 @@ onUnmounted(() => {
 })
 
 const canViewAlerts = computed(() => authStore.hasPermission('inventory.alerts.view'))
+const canViewNotifications = computed(() => authStore.hasPermission('inventory.notifications.view'))
 const canCreateAdjustments = computed(() => authStore.hasPermission('inventory.adjustments.create'))
 const canCreateTransfers = computed(() => authStore.hasPermission('inventory.transfers.create'))
 const canGenerateAlerts = computed(() => authStore.hasPermission('inventory.alerts.generate'))
