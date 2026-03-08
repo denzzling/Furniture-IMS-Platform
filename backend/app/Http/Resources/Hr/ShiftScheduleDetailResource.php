@@ -24,7 +24,7 @@ class ShiftScheduleDetailResource extends JsonResource
                 'position' => $this->employee?->role?->name ?? $this->employee?->user?->role_name,
                 'phone' => $this->employee?->phone,
                 'email' => $this->employee?->user?->email,
-                'branch' => $this->employee?->branch?->branch_name ?? $this->employee?->user?->branch?->branch_name,
+                'branch' => $this->employee?->branch?->name ?? $this->employee?->user?->branch?->name,
                 'hire_date' => $this->employee?->hire_date?->format('Y-m-d'),
                 'employment_type' => $this->employee?->employment_type,
                 'status' => $this->employee?->status,

@@ -27,6 +27,7 @@ class Store extends Model
         'latitude',
         'verified_at',
         'verified_by',
+        'settings',
     ];
 
     protected $casts = [
@@ -36,6 +37,7 @@ class Store extends Model
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
         'verified_at' => 'datetime',
+        'settings' => 'array',
     ];
 
     protected $table = 'stores';

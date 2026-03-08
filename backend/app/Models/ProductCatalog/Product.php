@@ -3,9 +3,11 @@
 
 namespace App\Models\ProductCatalog;
 
+use App\Models\Core\User;
 use App\Models\Store\Store;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Auth;
 
 class Product extends Model
 {
@@ -23,6 +25,7 @@ class Product extends Model
         'brand',
         'collection_name',
         'base_price',
+        'cost_price',
         'discounted_price',
         'tax_rate',
         'length_cm',
@@ -44,6 +47,7 @@ class Product extends Model
 
     protected $casts = [
         'base_price' => 'decimal:2',
+        'cost_price' => 'decimal:2',
         'discounted_price' => 'decimal:2',
         'tax_rate' => 'decimal:2',
         'assembly_required' => 'boolean',
@@ -52,6 +56,10 @@ class Product extends Model
         'is_bestseller' => 'boolean',
         'is_active' => 'boolean',
         'published_at' => 'datetime'
+    ];
+
+    protected $hidden = [
+        'cost_price',
     ];
 
     // Relationships
@@ -147,6 +155,41 @@ class Product extends Model
     public function getCurrentPriceAttribute()
     {
         return $this->discounted_price ?? $this->base_price;
+    }
+
+    /**
+     * Protect cost price visibility unless user has explicit permission.
+     */
+    public function getCostPriceAttribute($value)
+    {
+        $user = Auth::user();
+
+        if (!$user) {
+            return null;
+        }
+
+        if ($user instanceof User && $user->hasPermissionTo('finance.products.view.store', $this->store_id)) {
+            return $value;
+        }
+
+        return null;
+    }
+
+    public function getDisplayPriceAttribute()
+    {
+        return $this->discounted_price ?? $this->base_price;
+    }
+
+    public function getProfitMarginAttribute()
+    {
+        $costPrice = (float) $this->getRawOriginal('cost_price');
+        $displayPrice = (float) ($this->discounted_price ?? $this->base_price ?? 0);
+
+        if ($costPrice <= 0 || $displayPrice <= 0) {
+            return null;
+        }
+
+        return round((($displayPrice - $costPrice) / $displayPrice) * 100, 2);
     }
 
     public function getDimensionsAttribute()

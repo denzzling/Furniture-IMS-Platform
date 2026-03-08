@@ -36,7 +36,7 @@ class AttendanceResource extends JsonResource
                 'employee_number' => $employee?->employee_number,
                 'role_name' => $user?->role_name,
                 'department' => $employee?->department,
-                'branch' => $user?->branch?->branch_name ?? $employee?->branch?->branch_name,
+                'branch' => $user?->branch?->name ?? $employee?->branch?->name,
             ],
             'shift' => [
                 'id' => $this->shift?->id,
@@ -119,7 +119,7 @@ class AttendanceResource extends JsonResource
                 'role_name' => $user?->role_name,
                 'hire_date' => $employee?->hire_date?->format('Y-m-d'),
                 'employment_type' => $employee?->employment_type,
-                'branch' => $user?->branch?->branch_name ?? $employee?->branch?->branch_name,
+                'branch' => $user?->branch?->name ?? $employee?->branch?->name,
             ],
         ] : [];
 

@@ -180,80 +180,80 @@ interface MenuItem {
 
 const productMenu: MenuItem[] = [
   {
-    to: "/merchandising/dashboard",
+    to: "/procurement/dashboard",
     label: "Dashboard",
     icon: "pi pi-home text-gray-500 w-5",
     requiredRoles: [ROLES.SUPER_ADMIN, ROLES.STORE_ADMIN, ROLES.STORE_MANAGER]
   },
   {
-    to: "/merchandising/products",
-    label: "All Products",
-    icon: "pi pi-box text-gray-500 w-5"
+    to: "/procurement/suppliers",
+    label: "Suppliers",
+    icon: "pi pi-users text-gray-500 w-5"
     // No requiredRoles = everyone can see
   },
   {
-    to: "/merchandising/products/new",
-    label: "Add New Product",
-    icon: "pi pi-plus-circle text-gray-500 w-5",
+    to: "/procurement/purchase-requisitions",
+    label: "Purchase Requisitions",
+    icon: "pi pi-file-edit text-gray-500 w-5",
     requiredRoles: [ROLES.SUPER_ADMIN, ROLES.STORE_ADMIN, ROLES.STORE_MANAGER]
   },
   {
-    to: "/merchandising/variations",
-    label: "Product Variations",
-    icon: "pi pi-palette text-gray-500 w-5",
+    to: "/procurement/rfqs",
+    label: "RFQs",
+    icon: "pi pi-send text-gray-500 w-5",
     requiredRoles: [ROLES.SUPER_ADMIN, ROLES.STORE_ADMIN, ROLES.STORE_MANAGER, ROLES.WAREHOUSE_MANAGER, ROLES.SALES_STAFF]
   },
   {
-    to: "/merchandising/assets",
-    label: "3D Models & Assets",
-    icon: "pi pi-images text-gray-500 w-5",
+    to: "/procurement/purchase-orders",
+    label: "Purchase Orders",
+    icon: "pi pi-shopping-cart text-gray-500 w-5",
     requiredRoles: [ROLES.SUPER_ADMIN, ROLES.STORE_ADMIN, ROLES.STORE_MANAGER, ROLES.SALES_STAFF]
   },
   {
-    to: "/merchandising/inventory",
-    label: "Inventory Status",
-    icon: "pi pi-database text-gray-500 w-5",
+    to: "/procurement/goods-receipts",
+    label: "Goods Receipts",
+    icon: "pi pi-inbox text-gray-500 w-5",
     requiredRoles: [ROLES.SUPER_ADMIN, ROLES.STORE_ADMIN, ROLES.STORE_MANAGER, ROLES.WAREHOUSE_MANAGER, ROLES.INVENTORY_STAFF, ROLES.SUPPLIER_COORDINATOR]
   }
 ]
 
 const catalogMenu: MenuItem[] = [
   {
-    to: "/merchandising/categories",
-    label: "Categories",
-    icon: "pi pi-sitemap text-gray-500 w-5",
+    to: "/procurement/payments",
+    label: "Supplier Payments",
+    icon: "pi pi-wallet text-gray-500 w-5",
     requiredRoles: [ROLES.SUPER_ADMIN, ROLES.STORE_ADMIN, ROLES.STORE_MANAGER]
   },
   {
-    to: "/merchandising/attributes",
-    label: "Product Attributes",
-    icon: "pi pi-tags text-gray-500 w-5",
+    to: "/procurement/suppliers/create",
+    label: "Add Supplier",
+    icon: "pi pi-user-plus text-gray-500 w-5",
     requiredRoles: [ROLES.SUPER_ADMIN, ROLES.STORE_ADMIN, ROLES.STORE_MANAGER]
   },
   {
-    to: "/merchandising/tags",
-    label: "Tags & Collections",
-    icon: "pi pi-bookmark text-gray-500 w-5",
+    to: "/procurement/purchase-requisitions/create",
+    label: "Create Requisition",
+    icon: "pi pi-plus-circle text-gray-500 w-5",
     requiredRoles: [ROLES.SUPER_ADMIN, ROLES.STORE_ADMIN, ROLES.STORE_MANAGER]
   },
   {
-    to: "/merchandising/pricing",
-    label: "Pricing Rules",
-    icon: "pi pi-dollar text-gray-500 w-5",
+    to: "/procurement/rfqs/create",
+    label: "Create RFQ",
+    icon: "pi pi-plus text-gray-500 w-5",
     requiredRoles: [ROLES.SUPER_ADMIN, ROLES.STORE_ADMIN, ROLES.STORE_MANAGER]
   }
 ]
 
 const analyticsMenu: MenuItem[] = [
   {
-    to: "/merchandising/reports",
-    label: "Sales Reports",
+    to: "/procurement/reports",
+    label: "Procurement Reports",
     icon: "pi pi-chart-line text-gray-500 w-5",
     requiredRoles: [ROLES.SUPER_ADMIN, ROLES.STORE_ADMIN, ROLES.STORE_MANAGER]
   },
   {
-    to: "/merchandising/pricing-history",
-    label: "Pricing History",
+    to: "/procurement/dashboard",
+    label: "Pending Approvals",
     icon: "pi pi-history text-gray-500 w-5",
     requiredRoles: [ROLES.SUPER_ADMIN, ROLES.STORE_ADMIN, ROLES.STORE_MANAGER]
   }

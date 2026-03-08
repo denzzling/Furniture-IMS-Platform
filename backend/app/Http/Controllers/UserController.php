@@ -237,7 +237,7 @@ class UserController extends Controller
             $user->load([
                 'role:id,name,display_name',
                 'store:id,store_name,store_code',
-                'branch:id,branch_name,branch_code'
+                'branch:id,name,branch_code'
             ]);
 
             return response()->json([

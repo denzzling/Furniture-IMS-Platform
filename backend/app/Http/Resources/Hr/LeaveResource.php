@@ -44,7 +44,7 @@ class LeaveResource extends JsonResource
             'full_name' => $this->employee?->fname . ' ' . $this->employee?->lname,
             'employee_number' => $this->employee?->employee_number,
             'department' => $this->employee?->department,
-            'branch' => $this->employee?->branch?->branch_name ?? null,
+            'branch' => $this->employee?->branch?->name ?? null,
             'avatar' => $this->getInitials($this->employee?->fname, $this->employee?->lname),
         ];
 
@@ -84,7 +84,7 @@ class LeaveResource extends JsonResource
                     'position' => $this->employee?->user?->role_name,
                     'hire_date' => $this->employee?->hire_date ? Carbon::parse($this->employee?->hire_date)->format('Y-m-d') : null,
                     'employment_type' => $this->employee?->employment_type,
-                    'branch' => $this->employee?->branch?->branch_name ?? null,
+                    'branch' => $this->employee?->branch?->name ?? null,
                 ],
                 'leave_details' => [
                     'leave_type' => $this->leave_type,

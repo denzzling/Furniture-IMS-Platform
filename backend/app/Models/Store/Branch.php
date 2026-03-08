@@ -33,7 +33,7 @@ class Branch extends Model
      */
     protected $fillable = [
         'store_id',
-        'branch_name',
+        'name',
         'address',
         'city',
         // 'province',
@@ -152,7 +152,7 @@ class Branch extends Model
     public function scopeSearch($query, $searchTerm)
     {
         return $query->where(function($q) use ($searchTerm) {
-            $q->where('branch_name', 'LIKE', "%{$searchTerm}%")
+            $q->where('name', 'LIKE', "%{$searchTerm}%")
               ->orWhere('address', 'LIKE', "%{$searchTerm}%")
               ->orWhere('city', 'LIKE', "%{$searchTerm}%")
               ->orWhere('branch_code', 'LIKE', "%{$searchTerm}%");
@@ -302,7 +302,7 @@ class Branch extends Model
     public function getContactInfoAttribute()
     {
         return [
-            'branch_name' => $this->branch_name,
+            'name' => $this->name,
             'address' => $this->full_address,
             'contact_number' => $this->contact_number,
             'email' => $this->email,

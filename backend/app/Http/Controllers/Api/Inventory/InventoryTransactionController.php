@@ -203,7 +203,7 @@ class InventoryTransactionController extends Controller
             return [
                 'transaction_number' => $transaction->transaction_number,
                 'date' => $transaction->transaction_date->format('Y-m-d H:i:s'),
-                'branch' => $transaction->branch->branch_name,
+                'branch' => $transaction->branch->name,
                 'product' => $transaction->product->product_name,
                 'variation' => $transaction->variation?->variation_name ?? 'N/A',
                 'transaction_type' => $transaction->transaction_type,

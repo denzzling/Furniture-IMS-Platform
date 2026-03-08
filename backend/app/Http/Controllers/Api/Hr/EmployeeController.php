@@ -90,7 +90,7 @@ class EmployeeController extends Controller
                     'status' => ucfirst($employee->status),
                     'hireDate' => $employee->hire_date,
                     'email' => $employee->user->email ?? null,
-                    'branch' => $employee->user->branch->branch_name ?? null,
+                    'branch' => $employee->user->branch->name ?? null,
                     'phone' => $employee->phone
                 ];
             });
@@ -429,7 +429,7 @@ class EmployeeController extends Controller
             'contract_path',
         ])
             ->with([
-                'branch:id,branch_name',
+                'branch:id,name',
                 'role:id,name'
             ])
             ->where('store_id', $user->store_id)

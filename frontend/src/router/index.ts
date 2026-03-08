@@ -63,7 +63,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/system',
     component: StoreAdminLayout,
-    meta: { requiresAuth: true, role: ['store_admin'] },
+    meta: { requiresAuth: true, role: ['store_admin', 'owner', 'super_admin'] },
     children: [
       { path: 'index', name: 'store.dashboard', component: Dashboard, meta: { title: 'Dashboard' } },
       // { path: 'sales', name: 'Sales', component: Sales, meta: { title: 'Sales & Reports' } },
@@ -76,6 +76,7 @@ const routes: RouteRecordRaw[] = [
       // { path: 'users', name: 'Users', component: Users, meta: { title: 'Users', subtitle: 'User Management & Permissions' } },
       // { path: 'productRegistration', name: 'ProductRegistration', component: ProductRegistration },
       // { path: 'profile', name: 'ProductRegistration', component: ProductRegistration },
+      { path: 'roles-permissions', name: 'store.role-permissions', component: () => import('../views/system/admin/RolePermissions.vue'), meta: { title: 'Role Permissions',  permissions: ['store.role.permission'] } },
       { path: 'store', children: [{ path: 'verification', name: 'StoreVerification', component: Verification, meta: { title: 'Store Verification' } }] }
     ]
   },
@@ -161,6 +162,31 @@ const routes: RouteRecordRaw[] = [
       { path: 'reports', name: 'merchandising.reports', component: () => import('../views/system/merchandising/reports/SalesReports.vue'), meta: { title: 'Sales Reports', subtitle: 'Analyze product performance', permissions: ['merchandising.reports.view'] } },
       { path: 'pricing-history', name: 'merchandising.pricing-history', component: () => import('../views/system/merchandising/reports/PricingHistory.vue'), meta: { title: 'Pricing History', subtitle: 'Track price changes over time', permissions: ['merchandising.reports.view'] } },
       { path: '', redirect: { name: 'merchandising.products' } },
+    ]
+  },
+  {
+    path: '/procurement',
+    component: () => import('../layouts/ProcurementLayout.vue'),
+    meta: { requiresAuth: true, roles: ['super_admin', 'store_admin', 'store_manager', 'warehouse_manager', 'inventory_staff', 'sales_staff', 'supplier_coordinator'] },
+    children: [
+      { path: 'dashboard', name: 'procurement.dashboard', component: () => import('../views/system/procurement/Dashboard.vue'), meta: { title: 'Procurement Dashboard', subtitle: 'Overview of procurement operations' } },
+      { path: 'suppliers', name: 'procurement.suppliers', component: () => import('../views/system/procurement/Suppliers/Index.vue'), meta: { title: 'Suppliers', subtitle: 'Manage supplier records' } },
+      { path: 'suppliers/create', name: 'procurement.suppliers.create', component: () => import('../views/system/procurement/Suppliers/Create.vue'), meta: { title: 'Create Supplier', subtitle: 'Add a supplier profile' } },
+      { path: 'suppliers/:id', name: 'procurement.suppliers.detail', component: () => import('../views/system/procurement/Suppliers/Detail.vue'), meta: { title: 'Supplier Details', subtitle: 'View supplier information' } },
+      { path: 'suppliers/:id/edit', name: 'procurement.suppliers.edit', component: () => import('../views/system/procurement/Suppliers/Edit.vue'), meta: { title: 'Edit Supplier', subtitle: 'Update supplier information' } },
+      { path: 'purchase-requisitions', name: 'procurement.purchase-requisitions', component: () => import('../views/system/procurement/PurchaseRequisitions/Index.vue'), meta: { title: 'Purchase Requisitions', subtitle: 'Manage requisitions' } },
+      { path: 'purchase-requisitions/create', name: 'procurement.purchase-requisitions.create', component: () => import('../views/system/procurement/PurchaseRequisitions/Create.vue'), meta: { title: 'Create Requisition', subtitle: 'Create a purchase requisition' } },
+      { path: 'purchase-requisitions/:id', name: 'procurement.purchase-requisitions.detail', component: () => import('../views/system/procurement/PurchaseRequisitions/Detail.vue'), meta: { title: 'Requisition Details', subtitle: 'Review requisition details' } },
+      { path: 'rfqs', name: 'procurement.rfqs', component: () => import('../views/system/procurement/RFQs/Index.vue'), meta: { title: 'RFQs', subtitle: 'Manage requests for quotations' } },
+      { path: 'rfqs/create', name: 'procurement.rfqs.create', component: () => import('../views/system/procurement/RFQs/Create.vue'), meta: { title: 'Create RFQ', subtitle: 'Create a request for quotation' } },
+      { path: 'rfqs/:id', name: 'procurement.rfqs.detail', component: () => import('../views/system/procurement/RFQs/Detail.vue'), meta: { title: 'RFQ Details', subtitle: 'Review RFQ details' } },
+      { path: 'purchase-orders', name: 'procurement.purchase-orders', component: () => import('../views/system/procurement/PurchaseOrders/Index.vue'), meta: { title: 'Purchase Orders', subtitle: 'Manage purchase orders' } },
+      { path: 'purchase-orders/create', name: 'procurement.purchase-orders.create', component: () => import('../views/system/procurement/PurchaseOrders/Create.vue'), meta: { title: 'Create Purchase Order', subtitle: 'Create a purchase order' } },
+      { path: 'purchase-orders/:id', name: 'procurement.purchase-orders.detail', component: () => import('../views/system/procurement/PurchaseOrders/Detail.vue'), meta: { title: 'Purchase Order Details', subtitle: 'Review purchase order details' } },
+      { path: 'goods-receipts', name: 'procurement.goods-receipts', component: () => import('../views/system/procurement/GoodsReceipts/Index.vue'), meta: { title: 'Goods Receipts', subtitle: 'Track incoming goods' } },
+      { path: 'payments', name: 'procurement.payments', component: () => import('../views/system/procurement/Payments/Index.vue'), meta: { title: 'Supplier Payments', subtitle: 'Manage supplier payments' } },
+      { path: 'reports', name: 'procurement.reports', component: () => import('../views/system/procurement/Reports/Index.vue'), meta: { title: 'Procurement Reports', subtitle: 'Analyze procurement performance' } },
+      { path: '', redirect: { name: 'procurement.dashboard' } },
     ]
   },
   ...inventoryRoutes,

@@ -7,15 +7,32 @@ use App\Http\Controllers\Controller;
 use App\Models\Inventory\BranchInventory;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class BranchInventoryController extends Controller
 {
     /**
-     * Display inventory for a specific branch
-     * GET /api/inventory/branch/{branchId}
+     * Get the authenticated user's branch ID
      */
-    public function index(Request $request, int $branchId): JsonResponse
+    private function getUserBranchId(): int
     {
+        $branchId = auth()->user()->branch_id;
+        
+        if (!$branchId) {
+            abort(403, 'User does not have an associated branch');
+        }
+        
+        return $branchId;
+    }
+
+    /**
+     * Display inventory for the authenticated user's branch
+     * GET /api/inventory
+     */
+    public function index(Request $request): JsonResponse
+    {
+        $branchId = $this->getUserBranchId();
+        
         $query = BranchInventory::with(['product', 'variation', 'branch'])
             ->where('branch_id', $branchId);
 
@@ -58,18 +75,22 @@ class BranchInventoryController extends Controller
     }
 
     /**
-     * Display a specific inventory item
+     * Display a specific inventory item (must belong to user's branch)
      * GET /api/inventory/{id}
      */
     public function show(int $id): JsonResponse
     {
+        $branchId = $this->getUserBranchId();
+        
         $inventory = BranchInventory::with([
             'product',
             'variation',
             'branch',
             'store',
             'lastCountedBy'
-        ])->findOrFail($id);
+        ])
+        ->where('branch_id', $branchId)
+        ->findOrFail($id);
 
         return response()->json([
             'success' => true,
@@ -78,13 +99,14 @@ class BranchInventoryController extends Controller
     }
 
     /**
-     * Create new inventory record
+     * Create new inventory record (automatically uses user's branch)
      * POST /api/inventory
      */
     public function store(Request $request): JsonResponse
     {
+        $branchId = $this->getUserBranchId();
+        
         $validated = $request->validate([
-            'branch_id' => 'required|exists:branches,id',
             'product_id' => 'required|exists:products,id',
             'variation_id' => 'nullable|exists:product_variations,id',
             'warehouse_section' => 'nullable|string|max:50',
@@ -98,10 +120,29 @@ class BranchInventoryController extends Controller
             'safety_stock' => 'required|integer|min:0',
         ]);
 
+        // Add branch_id from authenticated user
+        $validated['branch_id'] = $branchId;
         $validated['store_id'] = auth()->user()->store_id;
         $validated['quantity_on_hand'] = 0;
         $validated['quantity_available'] = 0;
         $validated['stock_status'] = 'out_of_stock';
+
+        // Check if inventory record already exists for this product/variation in this branch
+        $existingInventory = BranchInventory::where('branch_id', $branchId)
+            ->where('product_id', $validated['product_id'])
+            ->when(isset($validated['variation_id']), function ($query) use ($validated) {
+                return $query->where('variation_id', $validated['variation_id']);
+            }, function ($query) {
+                return $query->whereNull('variation_id');
+            })
+            ->first();
+
+        if ($existingInventory) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Inventory record already exists for this product in your branch',
+            ], 422);
+        }
 
         $inventory = BranchInventory::create($validated);
 
@@ -113,12 +154,15 @@ class BranchInventoryController extends Controller
     }
 
     /**
-     * Update inventory settings (not quantities)
+     * Update inventory settings (must belong to user's branch)
      * PUT /api/inventory/{id}
      */
     public function update(Request $request, int $id): JsonResponse
     {
-        $inventory = BranchInventory::findOrFail($id);
+        $branchId = $this->getUserBranchId();
+        
+        $inventory = BranchInventory::where('branch_id', $branchId)
+            ->findOrFail($id);
 
         $validated = $request->validate([
             'warehouse_section' => 'nullable|string|max:50',
@@ -142,12 +186,15 @@ class BranchInventoryController extends Controller
     }
 
     /**
-     * Delete inventory record
+     * Delete inventory record (must belong to user's branch)
      * DELETE /api/inventory/{id}
      */
     public function destroy(int $id): JsonResponse
     {
-        $inventory = BranchInventory::findOrFail($id);
+        $branchId = $this->getUserBranchId();
+        
+        $inventory = BranchInventory::where('branch_id', $branchId)
+            ->findOrFail($id);
 
         if ($inventory->quantity_on_hand > 0) {
             return response()->json([
@@ -165,11 +212,13 @@ class BranchInventoryController extends Controller
     }
 
     /**
-     * Get inventory summary for dashboard
-     * GET /api/inventory/branch/{branchId}/summary
+     * Get inventory summary for dashboard (automatically uses user's branch)
+     * GET /api/inventory/summary
      */
-    public function summary(int $branchId): JsonResponse
+    public function summary(): JsonResponse
     {
+        $branchId = $this->getUserBranchId();
+        
         $summary = [
             'total_items' => BranchInventory::where('branch_id', $branchId)->count(),
             'in_stock' => BranchInventory::where('branch_id', $branchId)->inStock()->count(),
@@ -186,11 +235,13 @@ class BranchInventoryController extends Controller
     }
 
     /**
-     * Get low stock alerts
-     * GET /api/inventory/branch/{branchId}/low-stock
+     * Get low stock alerts (automatically uses user's branch)
+     * GET /api/inventory/low-stock
      */
-    public function lowStock(int $branchId): JsonResponse
+    public function lowStock(): JsonResponse
     {
+        $branchId = $this->getUserBranchId();
+        
         $lowStock = BranchInventory::with(['product', 'variation'])
             ->where('branch_id', $branchId)
             ->lowStock()
@@ -203,12 +254,16 @@ class BranchInventoryController extends Controller
     }
 
     /**
-     * Update stock status manually
+     * Update stock status manually (must belong to user's branch)
      * POST /api/inventory/{id}/update-status
      */
     public function updateStatus(int $id): JsonResponse
     {
-        $inventory = BranchInventory::findOrFail($id);
+        $branchId = $this->getUserBranchId();
+        
+        $inventory = BranchInventory::where('branch_id', $branchId)
+            ->findOrFail($id);
+            
         $inventory->updateStockStatus();
 
         return response()->json([

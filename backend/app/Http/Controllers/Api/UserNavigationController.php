@@ -58,8 +58,14 @@ class UserNavigationController extends Controller
     /**
      * Get user permissions from their role
      */
-    private function getUserPermissions($user): array
+    protected function getUserPermissions($user = null): array
     {
+        $user = $user ?? auth()->user();
+
+        if (!$user) {
+            return [];
+        }
+
         if (!$user->role) {
             return [];
         }

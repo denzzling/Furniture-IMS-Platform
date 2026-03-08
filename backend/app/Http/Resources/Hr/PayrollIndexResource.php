@@ -30,7 +30,7 @@ class PayrollIndexResource extends JsonResource
                 'lname' => $this->employee->lname,
                 'employee_number' => $this->employee->employee_number,
                 'department' => $this->employee->department,
-                'branch' => $this->employee->branch->branch_name
+                'branch' => $this->employee->branch->name
             ],
             
             'pay_period' => [

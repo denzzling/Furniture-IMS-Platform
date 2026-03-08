@@ -55,7 +55,7 @@ class UserResource extends JsonResource
             'branch' => $this->when($canViewSensitive && $this->relationLoaded('branch'), function () {
                 return $this->branch ? [
                     'id' => $this->branch->id,
-                    'name' => $this->branch->branch_name,
+                    'name' => $this->branch->name,
                     'code' => $this->branch->branch_code,
                 ] : null;
             }),

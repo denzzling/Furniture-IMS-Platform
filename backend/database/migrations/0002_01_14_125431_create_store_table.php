@@ -36,7 +36,7 @@ return new class extends Migration
         Schema::create('branches', function (Blueprint $table) {
             $table->id();
             $table->foreignId('store_id')->constrained('stores', 'id');
-            $table->string('branch_name', 255);
+            $table->string('name', 255);
             $table->string('address', 255)->nullable();
             $table->string('city', 100)->nullable();
             $table->string('province', 50)->default('Cavite');

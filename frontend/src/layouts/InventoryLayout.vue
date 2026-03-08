@@ -3,13 +3,15 @@
 <template>
     <div class="flex h-screen w-full max-w-[100vw] overflow-hidden bg-gray-50">
         <!-- Sidebar -->
-        <aside class="sidebar bg-emerald-50 w-64 flex flex-col z-30 overflow-y-auto"
-            :class="{ 'open': sidebarOpen }">
+        <aside class="sidebar bg-emerald-50 w-64 flex flex-col z-30 overflow-y-auto" :class="{ 
+                    'open': sidebarOpen,
+                    'closed': !sidebarOpen 
+                }">
             <!-- Logo section -->
             <div class="px-5 py-4 border-b border-gray-200">
                 <div class="flex items-center gap-3">
                     <div class="flex items-center justify-center w-10 h-10 rounded-lg">
-                        <img src="../../public/F.svg" alt="Furnisync" class="w-20 h-20">
+                        <img src="/F.svg" alt="Furnisync" class="w-20 h-20">
                     </div>
     
                     <div class="leading-tight" style="font-family: 'Poppins'">
@@ -27,33 +29,21 @@
                     <Skeleton height="40px" class="rounded-lg" />
                     <Skeleton height="40px" class="rounded-lg" />
                 </div>
-
+    
                 <template v-else>
                     <!-- All Navigation Items -->
                     <div v-if="allNavigation.length > 0" class="px-4 space-y-1 pb-4">
-                        <router-link 
-                            v-for="item in allNavigation" 
-                            :key="item.id" 
-                            :to="item.route_path"
-                            class="nav-item text-sm font-medium flex items-center space-x-3 py-3 px-4 rounded-lg text-gray-600 hover:bg-emerald-50 hover:text-emerald-600 transition-colors"
-                        >
+                        <router-link v-for="item in allNavigation" :key="item.id" :to="item.route_path"
+                            class="nav-item text-sm font-medium flex items-center space-x-3 py-3 px-4 rounded-lg text-gray-600 hover:bg-emerald-50 hover:text-emerald-600 transition-colors">
                             <i :class="[item.icon || 'pi pi-circle', 'w-5']"></i>
                             <span class="flex-1">{{ item.display_name }}</span>
-                            <Badge 
-                                v-if="item.meta?.badge === 'count' && alertCount > 0" 
-                                :value="alertCount" 
-                                severity="danger" 
-                                size="small"
-                            />
-                            <Badge 
-                                v-else-if="item.badge_count && item.badge_count > 0" 
-                                :value="item.badge_count" 
-                                severity="danger" 
-                                size="small"
-                            />
+                            <Badge v-if="item.meta?.badge === 'count' && alertCount > 0" :value="alertCount"
+                                severity="danger" size="small" />
+                            <Badge v-else-if="item.badge_count && item.badge_count > 0" :value="item.badge_count"
+                                severity="danger" size="small" />
                         </router-link>
                     </div>
-        
+    
                     <!-- Empty State -->
                     <div v-else class="px-4 py-8 text-center">
                         <i class="pi pi-inbox text-4xl text-gray-300 mb-3"></i>
@@ -62,17 +52,6 @@
                     </div>
                 </template>
             </nav>
-
-            <!-- Sidebar Footer -->
-            <div class="px-4 py-3 border-t border-gray-200">
-                <router-link 
-                    to="/system/index"
-                    class="flex items-center gap-2 text-sm text-gray-600 hover:text-emerald-600 transition-colors py-2 px-3 rounded-lg hover:bg-gray-50"
-                >
-                    <i class="pi pi-arrow-left"></i>
-                    <span>Back to System</span>
-                </router-link>
-            </div>
         </aside>
     
         <!-- Main content -->
@@ -82,7 +61,10 @@
                 class="bg-white border-b border-gray-200 py-4 px-6 flex items-center justify-between sticky top-0 z-20 shadow-sm">
                 <div class="flex-1">
                     <div class="flex items-center gap-3">
-                        <Button icon="pi pi-bars" text rounded class="lg:hidden" @click="toggleSidebar" />
+                        <!-- Menu button for ALL screens - visible on all devices -->
+                        <Button icon="pi pi-bars" text rounded @click="toggleSidebar" class="mr-1 menu-button"
+                            v-tooltip.top="sidebarOpen ? 'Close menu (Ctrl+B)' : 'Open menu (Ctrl+B)'" />
+    
                         <div>
                             <h1 class="text-xl font-semibold text-gray-800">
                                 {{ route.meta.title || 'Inventory Management' }}
@@ -97,26 +79,13 @@
                 <!-- Header Actions -->
                 <div class="flex items-center space-x-4">
                     <!-- Stock Alerts -->
-                    <Button 
-                        v-if="canViewAlerts"
-                        icon="pi pi-bell" 
-                        severity="danger" 
-                        text 
-                        rounded 
-                        :badge="alertCount > 0 ? alertCount.toString() : undefined" 
-                        badgeSeverity="danger"
-                        @click="navigateToAlerts"
-                    />
-
+                    <Button v-if="canViewAlerts" icon="pi pi-bell" severity="danger" text rounded
+                        :badge="alertCount > 0 ? alertCount.toString() : undefined" badgeSeverity="danger"
+                        @click="navigateToAlerts" />
+    
                     <!-- Quick Actions -->
-                    <Button 
-                        v-if="canCreateAdjustments || canCreateTransfers"
-                        icon="pi pi-plus" 
-                        severity="success" 
-                        text 
-                        rounded
-                        @click="toggleQuickActions"
-                    />
+                    <Button v-if="canCreateAdjustments || canCreateTransfers" icon="pi pi-plus" severity="success" text
+                        rounded @click="toggleQuickActions" />
     
                     <!-- User Profile -->
                     <div class="border-l border-gray-200 pl-4 cursor-pointer select-none" @click="openUserDialog">
@@ -146,11 +115,7 @@
                     <template v-if="breadcrumbs.length > 0">
                         <template v-for="(crumb, index) in breadcrumbs" :key="index">
                             <i class="pi pi-angle-right text-gray-400 text-xs"></i>
-                            <router-link 
-                                v-if="crumb.path" 
-                                :to="crumb.path" 
-                                class="text-gray-500 hover:text-emerald-600"
-                            >
+                            <router-link v-if="crumb.path" :to="crumb.path" class="text-gray-500 hover:text-emerald-600">
                                 {{ crumb.name }}
                             </router-link>
                             <span v-else class="text-gray-800 font-medium">{{ crumb.name }}</span>
@@ -164,7 +129,7 @@
                 <router-view />
             </main>
         </div>
-
+    
         <!-- Quick Actions Menu -->
         <Menu ref="quickActionsMenu" :model="quickActionsItems" :popup="true" />
     </div>
@@ -173,33 +138,59 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useInventoryPermissions } from '../composables/inventory/useInventoryPermissions'
-import { useStockAlert } from '../composables/inventory/useStockAlert'
 import { startCase, toLower } from 'lodash'
 import Button from 'primevue/button'
 import Badge from 'primevue/badge'
 import Skeleton from 'primevue/skeleton'
 import Menu from 'primevue/menu'
 import { useAuthStore } from '../stores/auth'
+import inventoryService from '../services/inventory.service'
 import UserDialog from '../components/dialogs/UserDialog.vue'
 
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
-const userDialogRef = ref(null)
 const quickActionsMenu = ref(null)
+const userDialogRef = ref(null)
 const loadingNavigation = ref(false)
 
-const { 
-  canViewAlerts, 
-  canCreateAdjustments, 
-  canCreateTransfers,
-  canGenerateAlerts 
-} = useInventoryPermissions()
+// Sidebar state with persistence
+const sidebarOpen = ref(localStorage.getItem('sidebarOpen') !== 'false') // Default to open
 
-const { fetchSummary, summary } = useStockAlert()
+const toggleSidebar = () => {
+  sidebarOpen.value = !sidebarOpen.value
+  localStorage.setItem('sidebarOpen', sidebarOpen.value.toString())
+
+  // Dispatch event for any components that need to know about sidebar state
+  window.dispatchEvent(new CustomEvent('sidebar-toggle', {
+    detail: { open: sidebarOpen.value }
+  }))
+}
+
+// Keyboard shortcut: Ctrl+B to toggle sidebar
+const handleKeyboardShortcut = (event: KeyboardEvent) => {
+  if (event.ctrlKey && event.key === 'b') {
+    event.preventDefault()
+    toggleSidebar()
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('keydown', handleKeyboardShortcut)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeyboardShortcut)
+})
+
+const canViewAlerts = computed(() => authStore.hasPermission('inventory.alerts.view'))
+const canCreateAdjustments = computed(() => authStore.hasPermission('inventory.adjustments.create'))
+const canCreateTransfers = computed(() => authStore.hasPermission('inventory.transfers.create'))
+const canGenerateAlerts = computed(() => authStore.hasPermission('inventory.alerts.generate'))
+
+const alertSummary = ref<{ total_active: number }>({ total_active: 0 })
 
 const openUserDialog = (event: MouseEvent) => {
   if (userDialogRef.value) {
@@ -208,7 +199,7 @@ const openUserDialog = (event: MouseEvent) => {
 }
 
 // Alert count
-const alertCount = computed(() => summary.value?.total_active || 0)
+const alertCount = computed(() => alertSummary.value?.total_active || 0)
 
 // User data
 const fullName = computed(() => {
@@ -229,22 +220,22 @@ const roleDisplay = computed(() => startCase(authStore.user?.role || 'User'))
 const breadcrumbs = computed(() => {
   const crumbs = []
   const title = route.meta.title as string
-  
+
   if (title && title !== 'Inventory Dashboard') {
     crumbs.push({
       name: title,
       path: null
     })
   }
-  
+
   return crumbs
 })
 
 // Navigation
 const allNavigation = computed(() => {
   return authStore.navigation
-    .filter(item => 
-      item.module === 'inventory' && 
+    .filter(item =>
+      item.module === 'inventory' &&
       !item.parent_id &&
       item.is_active
     )
@@ -254,7 +245,7 @@ const allNavigation = computed(() => {
 // Quick Actions Menu
 const quickActionsItems = computed(() => {
   const items = []
-  
+
   if (canCreateAdjustments.value) {
     items.push({
       label: 'Stock Adjustment',
@@ -262,7 +253,7 @@ const quickActionsItems = computed(() => {
       command: () => router.push('/inventory/adjustments/create')
     })
   }
-  
+
   if (canCreateTransfers.value) {
     items.push({
       label: 'Stock Transfer',
@@ -270,7 +261,7 @@ const quickActionsItems = computed(() => {
       command: () => router.push('/inventory/transfers/create')
     })
   }
-  
+
   if (canGenerateAlerts.value) {
     items.push({
       separator: true
@@ -280,10 +271,11 @@ const quickActionsItems = computed(() => {
       icon: 'pi pi-bell',
       command: () => {
         // Implement generate alerts logic
+        console.log('Generate alerts clicked')
       }
     })
   }
-  
+
   return items
 })
 
@@ -295,12 +287,6 @@ const toggleQuickActions = (event: Event) => {
 
 const navigateToAlerts = () => {
   router.push('/inventory/alerts')
-}
-
-// Sidebar toggle for mobile
-const sidebarOpen = ref(false)
-const toggleSidebar = () => {
-  sidebarOpen.value = !sidebarOpen.value
 }
 
 // Load navigation and alerts
@@ -318,7 +304,9 @@ const loadNavigation = async () => {
 const loadAlertSummary = async () => {
   if (canViewAlerts.value) {
     try {
-      await fetchSummary()
+      const response = await inventoryService.getAlerts({ per_page: 1, status: 'active' })
+      const total = response?.data?.total ?? response?.data?.data?.length ?? 0
+      alertSummary.value = { total_active: total }
     } catch (error) {
       console.error('Failed to load alert summary:', error)
     }
@@ -336,8 +324,77 @@ onMounted(() => {
 <style scoped>
 .sidebar {
     transition: all 0.3s ease;
+    width: 16rem;
+    /* 64 * 0.25rem = 16rem */
 }
 
+/* Desktop sidebar behavior */
+@media (min-width: 1025px) {
+    .sidebar {
+        position: relative;
+        transform: translateX(0);
+    }
+
+    .sidebar.closed {
+        width: 0;
+        min-width: 0;
+        overflow: hidden;
+        padding: 0;
+        margin-left: -1rem;
+        /* Adjust based on your design */
+    }
+
+    /* Smooth transition for main content when sidebar toggles */
+    .flex-1 {
+        transition: margin-left 0.3s ease;
+    }
+}
+
+/* Mobile sidebar behavior */
+@media (max-width: 1024px) {
+    .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        height: 100vh;
+        transform: translateX(-100%);
+        width: 16rem;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        z-index: 40;
+    }
+
+    .sidebar.open {
+        transform: translateX(0);
+    }
+
+    .sidebar.closed {
+        transform: translateX(-100%);
+    }
+
+    /* Add overlay when sidebar is open on mobile */
+    .sidebar.open::after {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.3);
+        z-index: -1;
+        pointer-events: none;
+    }
+}
+
+/* Menu button styling */
+.menu-button {
+    transition: all 0.2s ease;
+}
+
+.menu-button:hover {
+    background-color: #e5e7eb;
+}
+
+/* Navigation item styling */
 .nav-item {
     position: relative;
     overflow: hidden;
@@ -370,21 +427,7 @@ onMounted(() => {
     color: #059669;
 }
 
-@media (max-width: 1024px) {
-    .sidebar {
-        position: fixed;
-        left: 0;
-        top: 0;
-        height: 100vh;
-        transform: translateX(-100%);
-    }
-
-    .sidebar.open {
-        transform: translateX(0);
-        box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
-    }
-}
-
+/* Scrollbar styling */
 main {
     scroll-behavior: smooth;
 }
@@ -408,5 +451,18 @@ main::-webkit-scrollbar-thumb {
 .sidebar::-webkit-scrollbar-thumb:hover,
 main::-webkit-scrollbar-thumb:hover {
     background: #94a3b8;
+}
+
+/* Ensure content doesn't overflow */
+.flex-1 {
+    min-width: 0;
+}
+
+/* Header text truncation */
+h1,
+p {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 </style>

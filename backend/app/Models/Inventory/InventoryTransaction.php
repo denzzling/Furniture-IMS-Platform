@@ -3,13 +3,17 @@
 
 namespace App\Models\Inventory;
 
+use App\Models\Core\ApprovalWorkflow;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 use App\Models\Store\Store;
 use App\Models\Store\Branch;
 use App\Models\ProductCatalog\Product;
 use App\Models\ProductCatalog\ProductVariation;
 use App\Models\Hr\Employee;
+use App\Services\Core\ApprovalEngine;
 
 class InventoryTransaction extends Model
 {
@@ -29,6 +33,11 @@ class InventoryTransaction extends Model
         'notes',
         'unit_cost',
         'total_value',
+        'requires_approval',
+        'approval_status',
+        'approval_workflow_id',
+        'approved_by',
+        'approved_at',
         'created_by',
         'transaction_date',
     ];
@@ -39,6 +48,8 @@ class InventoryTransaction extends Model
         'quantity_after' => 'integer',
         'unit_cost' => 'decimal:2',
         'total_value' => 'decimal:2',
+        'requires_approval' => 'boolean',
+        'approved_at' => 'datetime',
         'transaction_date' => 'datetime',
     ];
 
@@ -79,6 +90,36 @@ class InventoryTransaction extends Model
         return $this->morphTo(__FUNCTION__, 'reference_type', 'reference_id');
     }
 
+    public function approvalWorkflow(): MorphOne
+    {
+        return $this->morphOne(ApprovalWorkflow::class, 'workflowable');
+    }
+
+    public function approvalWorkflows(): MorphMany
+    {
+        return $this->morphMany(ApprovalWorkflow::class, 'workflowable');
+    }
+
+    /**
+     * Process approval based on dynamic rule engine.
+     */
+    public function processApproval(string $action, $user, int $storeId): array
+    {
+        /** @var ApprovalEngine $engine */
+        $engine = app(ApprovalEngine::class);
+        return $engine->process($this, $action, $user, $storeId);
+    }
+
+    public function needsApproval(): bool
+    {
+        return (bool) $this->requires_approval;
+    }
+
+    public function isApproved(): bool
+    {
+        return in_array((string) $this->approval_status, ['approved', 'auto_approved'], true);
+    }
+
     // Scopes
     public function scopeByType($query, string $type)
     {
@@ -103,5 +144,16 @@ class InventoryTransaction extends Model
     public function scopeTransfers($query)
     {
         return $query->whereIn('transaction_type', ['transfer_in', 'transfer_out']);
+    }
+
+    public function scopePendingApproval($query)
+    {
+        return $query->where('requires_approval', true)
+            ->whereIn('approval_status', ['pending', 'rejected']);
+    }
+
+    public function scopeApproved($query)
+    {
+        return $query->whereIn('approval_status', ['approved', 'auto_approved']);
     }
 }

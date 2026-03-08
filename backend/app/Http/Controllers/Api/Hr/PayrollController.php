@@ -38,7 +38,7 @@ class PayrollController extends Controller
             $query->with([
                 'employee' => function ($q) {
                     $q->select('id', 'fname', 'lname',  'employee_number', 'department', 'store_id', 'branch_id')
-                        ->with('branch:id,branch_name');
+                        ->with('branch:id,name');
                 },
                 'payPeriod' => function ($q) {
                     $q->select('id', 'name');
@@ -685,7 +685,7 @@ class PayrollController extends Controller
                     'hire_date',
                     'role_id'
                 ])
-                ->with(['branch:id,branch_name', 'role:id,display_name']) // Eager load relationships if needed
+                ->with(['branch:id,name', 'role:id,display_name']) // Eager load relationships if needed
                 ->orderBy('fname')
                 ->orderBy('lname');
 
@@ -734,7 +734,7 @@ class PayrollController extends Controller
                     'first_name' => $employee->fname,
                     'last_name' => $employee->lname,
                     'store_id' => $employee->store_id,
-                    'branch' => $employee->branch->branch_name ?? 'N/A',
+                    'branch' => $employee->branch->name ?? 'N/A',
                     'department' => $employee->department,
                     'role' => $employee->role->display_name ?? 'N/A',
                     'employment_type' => $employee->employment_type,

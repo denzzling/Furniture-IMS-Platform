@@ -7,10 +7,13 @@ use App\Models\Core\Role;
 use App\Models\Hr\Employee;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Models\Store\Store;
+use App\Services\Core\PermissionService;
 use App\Models\Store\Branch;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Laravel\Sanctum\HasApiTokens;
 
@@ -246,11 +249,11 @@ class User extends Authenticatable
             $this->relationLoaded('branch') && $this->branch &&
             $this->relationLoaded('store') && $this->store
         ) {
-            return "{$this->store->store_name} - {$this->branch->branch_name}";
+            return "{$this->store->store_name} - {$this->branch->name}";
         }
 
         if ($this->relationLoaded('branch') && $this->branch) {
-            return $this->branch->branch_name;
+            return $this->branch->name;
         }
 
         return 'No Branch Assigned';
@@ -260,7 +263,7 @@ class User extends Authenticatable
     public function resolveRouteBinding($value, $field = null)
     {
         // For super admins, show soft-deleted users
-        if (auth()->check() && $this->isSuperAdmin()) {
+        if (Auth::check() && $this->isSuperAdmin()) {
             return $this->withTrashed()->where($field ?? $this->getRouteKeyName(), $value)->firstOrFail();
         }
 
@@ -317,15 +320,47 @@ class User extends Authenticatable
     /**
      * Get user's permissions through role
      */
-    public function permissions()
+    public function permissions(): BelongsToMany
     {
-        return $this->hasManyThrough(
+        return $this->belongsToMany(
             Permission::class,
-            RolePermission::class,
-            'role_id', // Foreign key on role_permissions table
-            'id',      // Foreign key on permissions table
-            'role_id', // Local key on users table
-            'permission_id' // Local key on role_permissions table
+            'role_permissions',
+            'role_id',
+            'permission_id',
+            'role_id',
+            'id'
+        );
+    }
+
+    /**
+     * Get user roles in a role-agnostic shape.
+     */
+    public function roles(): BelongsToMany
+    {
+        // Uses users table as the bridge to remain backward-compatible with existing schema.
+        return $this->belongsToMany(
+            Role::class,
+            'users',
+            'id',
+            'role_id',
+            'id',
+            'id'
+        );
+    }
+
+    /**
+     * Get stores user can operate on.
+     */
+    public function stores(): BelongsToMany
+    {
+        // Uses users table as the bridge to remain backward-compatible with existing schema.
+        return $this->belongsToMany(
+            Store::class,
+            'users',
+            'id',
+            'store_id',
+            'id',
+            'id'
         );
     }
 
@@ -335,5 +370,92 @@ class User extends Authenticatable
     public function userPermissions()
     {
         return $this->hasMany(UserPermission::class);
+    }
+
+    /**
+     * Check a specific permission atom.
+     */
+    public function hasPermissionTo(string $permission, ?int $storeId = null): bool
+    {
+        return app(PermissionService::class)->userHasPermission($this, $permission, $storeId);
+    }
+
+    /**
+     * Check if user has at least one of the permission atoms.
+     */
+    public function hasAnyPermission(array $permissions, ?int $storeId = null): bool
+    {
+        foreach ($permissions as $permission) {
+            if ($this->hasPermissionTo($permission, $storeId)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Check if user has all permission atoms.
+     */
+    public function hasAllPermissions(array $permissions, ?int $storeId = null): bool
+    {
+        foreach ($permissions as $permission) {
+            if (!$this->hasPermissionTo($permission, $storeId)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Dual-role means creator can also approve in the same context.
+     */
+    public function isDualRoleFor(string $action, string $module, ?int $storeId = null): bool
+    {
+        $approveCandidates = [
+            sprintf('%s.%s.approve.store', $module, $action),
+            sprintf('%s.%s.approve.all', $module, $action),
+            sprintf('%s.all.approve', $module),
+        ];
+
+        $operateCandidates = [
+            sprintf('%s.%s.create.store', $module, $action),
+            sprintf('%s.%s.edit.store', $module, $action),
+            sprintf('%s.%s.create.all', $module, $action),
+            sprintf('%s.%s.edit.all', $module, $action),
+        ];
+
+        return $this->hasAnyPermission($approveCandidates, $storeId)
+            && $this->hasAnyPermission($operateCandidates, $storeId);
+    }
+
+    /**
+     * Return permissions grouped by module/action/scope.
+     */
+    public function getPermissionsGrouped(?int $storeId = null): array
+    {
+        $permissions = app(PermissionService::class)->getUserPermissions($this, $storeId);
+        $grouped = [];
+
+        foreach ($permissions as $name) {
+            $parts = explode('.', $name);
+            $module = $parts[0] ?? 'general';
+            $resource = $parts[1] ?? 'all';
+            $action = $parts[2] ?? 'view';
+            $scope = $parts[3] ?? 'all';
+
+            $grouped[$module][$resource][$action][] = $scope;
+        }
+
+        foreach ($grouped as $module => $resources) {
+            foreach ($resources as $resource => $actions) {
+                foreach ($actions as $action => $scopes) {
+                    $grouped[$module][$resource][$action] = array_values(array_unique($scopes));
+                }
+            }
+        }
+
+        return $grouped;
     }
 }

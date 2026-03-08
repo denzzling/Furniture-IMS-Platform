@@ -16,8 +16,8 @@ class BranchController extends Controller
             
             // Get branches for the user's store
             $branches = Branch::where('store_id', $user->store_id)
-                ->select('id', 'branch_name', 'branch_code', 'address', 'status', 'contact_number')
-                ->orderBy('branch_name')
+                ->select('id', 'name', 'branch_code', 'address', 'status', 'contact_number')
+                ->orderBy('name')
                 ->get();
             
             return response()->json([
@@ -38,7 +38,7 @@ class BranchController extends Controller
         try {
             $validated = $request->validate([
                 'store_id' => 'required|integer|exists:stores,id',
-                'branch_name' => 'required|string|max:255',
+                'name' => 'required|string|max:255',
                 'address' => 'required|string|max:255',
                 'latitude' => 'nullable|numeric|between:-90, 90',
                 'longitude' => 'nullable|numeric|between:-180, 180',
@@ -53,7 +53,7 @@ class BranchController extends Controller
                 'success' => true,
                 'message' => 'Branch is created successfully',
                 'data' => [
-                    'branch_name' => $branch->branch_name,
+                    'name' => $branch->name,
                     'branch_code' => $branch->branch_code,
                     'status' => $branch->status,
                 ]

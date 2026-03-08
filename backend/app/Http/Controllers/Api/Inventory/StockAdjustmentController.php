@@ -167,53 +167,7 @@ class StockAdjustmentController extends Controller
 
         DB::beginTransaction();
         try {
-            // Approve adjustment
-            $adjustment->approve(auth()->id(), $validated['approval_notes'] ?? null);
-
-            // Apply to inventory
-            foreach ($adjustment->items as $item) {
-                $inventory = BranchInventory::where('branch_id', $adjustment->branch_id)
-                    ->where('product_id', $item->product_id)
-                    ->where('variation_id', $item->variation_id)
-                    ->firstOrFail();
-
-                $quantityBefore = $inventory->quantity_on_hand;
-                
-                // Update inventory
-                $inventory->quantity_on_hand = $item->actual_quantity;
-                $inventory->quantity_available = $item->actual_quantity - $inventory->quantity_reserved;
-                $inventory->last_stock_count_date = $adjustment->adjustment_date;
-                $inventory->last_counted_quantity = $item->actual_quantity;
-                $inventory->last_counted_by = auth()->id();
-                $inventory->save();
-
-                $inventory->updateStockStatus();
-                $inventory->calculateTotalValue();
-
-                // Create inventory transaction
-                $transactionNumber = 'TXN-' . date('Y') . '-' . str_pad(InventoryTransaction::count() + 1, 5, '0', STR_PAD_LEFT);
-
-                InventoryTransaction::create([
-                    'transaction_number' => $transactionNumber,
-                    'store_id' => $adjustment->store_id,
-                    'branch_id' => $adjustment->branch_id,
-                    'product_id' => $item->product_id,
-                    'variation_id' => $item->variation_id,
-                    'transaction_type' => 'adjustment',
-                    'quantity_before' => $quantityBefore,
-                    'quantity_change' => $item->difference,
-                    'quantity_after' => $item->actual_quantity,
-                    'reference_type' => 'stock_adjustment',
-                    'reference_id' => $adjustment->id,
-                    'notes' => $adjustment->reason,
-                    'unit_cost' => $item->unit_cost,
-                    'total_value' => $item->value_difference,
-                    'created_by' => auth()->id(),
-                    'transaction_date' => now(),
-                ]);
-            }
-
-            $adjustment->update(['status' => 'applied']);
+            $this->applyApprovedAdjustment($adjustment, $validated['approval_notes'] ?? null, auth()->id());
 
             DB::commit();
 
@@ -271,11 +225,133 @@ class StockAdjustmentController extends Controller
             ], 422);
         }
 
+        $shouldAutoApprove = $this->userHasPermissions([
+            'inventory.adjustments.approve',
+            'finance.approvals.approve',
+        ]);
+
+        if ($shouldAutoApprove) {
+            DB::beginTransaction();
+            try {
+                $adjustment->update(['status' => 'pending_approval']);
+                $adjustment->load('items');
+
+                $this->applyApprovedAdjustment($adjustment, 'Auto-approved (inventory + finance permissions)', auth()->id());
+
+                DB::commit();
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Stock adjustment auto-approved and applied successfully',
+                    'data' => $adjustment->fresh(['items.product']),
+                ]);
+
+            } catch (\Exception $e) {
+                DB::rollBack();
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to auto-approve adjustment',
+                    'error' => $e->getMessage(),
+                ], 500);
+            }
+        }
+
         $adjustment->update(['status' => 'pending_approval']);
 
         return response()->json([
             'success' => true,
             'message' => 'Stock adjustment submitted for approval',
         ]);
+    }
+
+    private function applyApprovedAdjustment(StockAdjustment $adjustment, ?string $notes, int $approvedBy): void
+    {
+        // Approve adjustment
+        $adjustment->approve($approvedBy, $notes);
+
+        // Apply to inventory
+        foreach ($adjustment->items as $item) {
+            $inventory = BranchInventory::where('branch_id', $adjustment->branch_id)
+                ->where('product_id', $item->product_id)
+                ->where('variation_id', $item->variation_id)
+                ->firstOrFail();
+
+            $quantityBefore = $inventory->quantity_on_hand;
+            
+            // Update inventory
+            $inventory->quantity_on_hand = $item->actual_quantity;
+            $inventory->quantity_available = $item->actual_quantity - $inventory->quantity_reserved;
+            $inventory->last_stock_count_date = $adjustment->adjustment_date;
+            $inventory->last_counted_quantity = $item->actual_quantity;
+            $inventory->last_counted_by = $approvedBy;
+            $inventory->save();
+
+            $inventory->updateStockStatus();
+            $inventory->calculateTotalValue();
+
+            // Create inventory transaction
+            $transactionNumber = 'TXN-' . date('Y') . '-' . str_pad(InventoryTransaction::count() + 1, 5, '0', STR_PAD_LEFT);
+
+            InventoryTransaction::create([
+                'transaction_number' => $transactionNumber,
+                'store_id' => $adjustment->store_id,
+                'branch_id' => $adjustment->branch_id,
+                'product_id' => $item->product_id,
+                'variation_id' => $item->variation_id,
+                'transaction_type' => 'adjustment',
+                'quantity_before' => $quantityBefore,
+                'quantity_change' => $item->difference,
+                'quantity_after' => $item->actual_quantity,
+                'reference_type' => 'stock_adjustment',
+                'reference_id' => $adjustment->id,
+                'notes' => $adjustment->reason,
+                'unit_cost' => $item->unit_cost,
+                'total_value' => $item->value_difference,
+                'created_by' => $approvedBy,
+                'transaction_date' => now(),
+            ]);
+        }
+
+        $adjustment->update(['status' => 'applied']);
+    }
+
+    private function userHasPermissions(array $permissions): bool
+    {
+        $user = auth()->user();
+        if (!$user || !$user->role_id) {
+            return false;
+        }
+
+        $rolePermissions = DB::table('role_permissions')
+            ->join('permissions', 'role_permissions.permission_id', '=', 'permissions.id')
+            ->where('role_permissions.role_id', $user->role_id)
+            ->whereIn('permissions.name', $permissions)
+            ->where('permissions.is_active', true)
+            ->whereNull('permissions.deleted_at')
+            ->pluck('permissions.name')
+            ->toArray();
+
+        $userGrants = DB::table('user_permissions')
+            ->join('permissions', 'user_permissions.permission_id', '=', 'permissions.id')
+            ->where('user_permissions.user_id', $user->id)
+            ->where('user_permissions.type', 'grant')
+            ->whereIn('permissions.name', $permissions)
+            ->where('permissions.is_active', true)
+            ->whereNull('permissions.deleted_at')
+            ->pluck('permissions.name')
+            ->toArray();
+
+        $userRevokes = DB::table('user_permissions')
+            ->join('permissions', 'user_permissions.permission_id', '=', 'permissions.id')
+            ->where('user_permissions.user_id', $user->id)
+            ->where('user_permissions.type', 'revoke')
+            ->whereIn('permissions.name', $permissions)
+            ->pluck('permissions.name')
+            ->toArray();
+
+        $allPermissions = array_merge($rolePermissions, $userGrants);
+        $finalPermissions = array_diff($allPermissions, $userRevokes);
+
+        return count(array_diff($permissions, $finalPermissions)) === 0;
     }
 }

@@ -52,6 +52,7 @@ class DatabaseSeeder extends Seeder
             // RolePermissionSeeder::class,
             // NavigationItemsSeeder::class,
             // InventoryPermissionsSeeder::class,
+            PermissionSeeder::class,
             InventoryRolePermissionsSeeder::class,
             InventoryNavigationSeeder::class,
         ]);

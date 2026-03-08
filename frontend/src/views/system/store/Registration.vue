@@ -58,7 +58,7 @@
                         <label for="City" class="block text-sm font-medium text-gray-700 mb-2">
                             Branch Name *
                         </label>
-                        <input type="text" id="branch_name" v-model="formData.branch.branch_name" required
+                        <input type="text" id="name" v-model="formData.branch.name" required
                             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             placeholder="e.g., Dasmarinas Branch" />
                     </div>
@@ -170,7 +170,7 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <p class="text-sm text-gray-500">Branch Name</p>
-                            <p class="font-medium">{{ formData.branch.branch_name }}</p>
+                            <p class="font-medium">{{ formData.branch.name }}</p>
                         </div>
                         <div>
                             <p class="text-sm text-gray-500">City</p>
@@ -255,7 +255,7 @@
                         </div>
                         <h3 class="text-2xl font-bold text-gray-900 mb-4">Store Created Successfully!</h3>
                         <p class="text-gray-600 mb-6">
-                            Your store "{{ formData.store.store_name }}" & "{{ formData.branch.branch_name }}"
+                            Your store "{{ formData.store.store_name }}" & "{{ formData.branch.name }}"
                             have been registered successfully.
                         </p>
                         <button @click="goToDashboard"
@@ -292,7 +292,7 @@ const formData = reactive({
     status: 'active',
   },
   branch: {
-    branch_name: '',
+    name: '',
     address: '',
     province: 'Cavite',
     city: '',
@@ -353,7 +353,7 @@ const validateCurrentStep = () => {
 
     case 1:
       // Validate branch information
-      if (!formData.branch.branch_name.trim()) {
+      if (!formData.branch.name.trim()) {
         alert('Branch name is required')
         return false
       }
@@ -398,7 +398,7 @@ const defaultFormData = () => {
   }
 
   formData.branch = {
-    branch_name: '',
+    name: '',
     address: '',
     latitude: null,
     longitude: null,
